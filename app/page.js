@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import BackToTop from "./components/BackToTop";
 
 const sections = [
   {
@@ -24,13 +25,13 @@ const sections = [
     number: "04",
     title: "التواصل مع الأسرة",
     description:
-      "تعزيز التواصل مع أولياء الأمور لمتابعة رحلة أبنائهم التعليمية.",
+      "تعزيز التواصل بين المسجد وأولياء الأمور لمتابعة رحلة أبنائهم التعليمية.",
   },
 ];
 
 export default function HomePage() {
   return (
-    <main className="public-site" dir="rtl">
+    <main className="public-site" dir="rtl" id="top">
       <header className="public-header">
         <div className="public-container header-inner">
           <Link href="/" className="public-brand">
@@ -41,7 +42,6 @@ export default function HomePage() {
               height={65}
               priority
             />
-
             <span>
               <strong>مسجد التراحم</strong>
               <small>منظومة رحَمة الإدارية</small>
@@ -57,8 +57,7 @@ export default function HomePage() {
           </nav>
 
           <Link href="/login" className="header-login">
-            دخول المنظومة
-            <span>←</span>
+            Login
           </Link>
         </div>
       </header>
@@ -86,7 +85,7 @@ export default function HomePage() {
               </a>
 
               <Link href="/login" className="secondary-button">
-                الدخول إلى المنظومة
+                Login
               </Link>
             </div>
 
@@ -116,7 +115,6 @@ export default function HomePage() {
           </div>
 
           <div className="about-highlight">
-            <div className="highlight-icon">۞</div>
             <h3>القرآن الكريم أساس رحلتنا</h3>
             <p>
               نجعل تعليم القرآن وحفظه ومراجعته محورًا
@@ -142,7 +140,6 @@ export default function HomePage() {
           <div className="rahma-content">
             <div className="rahma-main-card">
               <h3>من المسجد، وإلى مستقبل تعليمي أفضل</h3>
-
               <p>
                 تهدف المنظومة إلى الارتقاء بجودة العمل
                 التعليمي والإداري، وتطوير أساليب متابعة
@@ -249,8 +246,7 @@ export default function HomePage() {
           </div>
 
           <Link href="/login" className="join-button">
-            الدخول إلى المنظومة
-            <span>←</span>
+            Login
           </Link>
         </div>
       </section>
@@ -273,7 +269,7 @@ export default function HomePage() {
 
           <p>لخدمة كتاب الله ورعاية الأجيال.</p>
 
-          <Link href="/login">دخول المنظومة</Link>
+          <Link href="/login">Login</Link>
         </div>
 
         <div className="footer-bottom">
@@ -281,14 +277,7 @@ export default function HomePage() {
         </div>
       </footer>
 
-      <a
-        href="#home"
-        className="back-to-top"
-        aria-label="العودة إلى أعلى الصفحة"
-        title="العودة إلى الأعلى"
-      >
-        ↑
-      </a>
+      <BackToTop />
     </main>
   );
 }
