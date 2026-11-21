@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServer } from "../../lib/supabaseServer";
+import DashboardClient from "./DashboardClient";
+import "./page.css";
 
 export default async function DashboardPage() {
   const supabase = await createSupabaseServer();
@@ -15,7 +17,7 @@ export default async function DashboardPage() {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("username, full_name, role, is_active")
+    .select("id, username, full_name, role, is_active")
     .eq("id", user.id)
     .single();
 
@@ -23,28 +25,5 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const roles = {
-    admin: "مدير النظام",
-    supervisor: "المشرف",
-    teacher: "المعلم",
-    guardian: "ولي الأمر",
-  };
-
-  return (
-    <main className="welcome" dir="rtl">
-      <section className="welcomeCard">
-        <p className="eyebrow">مسجد التراحم</p>
-
-        <h1>مرحبًا، {profile.full_name}</h1>
-
-        <p className="description">
-          تم تسجيل دخولك بنجاح إلى منظومة رحَمة الإدارية.
-        </p>
-
-        <div className="status">
-          {roles[profile.role] || "مستخدم"}
-        </div>
-      </section>
-    </main>
-  );
+  return <DashboardClient profile={profile} />;
 }
