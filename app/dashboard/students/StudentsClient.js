@@ -2,6 +2,74 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+const MAX_ATTEMPTS = 3;
+
+function wait(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function fetchWithRetry(url, options = {}) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        cache: "no-store",
+      });
+
+      let result;
+
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error("استجابة الخادم غير صالحة.");
+      }
+
+      if (response.ok) {
+        return result;
+      }
+
+      const error = new Error(
+        result?.error || `حدث خطأ في الطلب (${response.status}).`
+      );
+
+      error.status = response.status;
+
+      // أخطاء الصلاحيات والبيانات والطلبات غير الصحيحة
+      // لا تستفيد عادةً من إعادة المحاولة.
+      if (
+        response.status >= 400 &&
+        response.status < 500 &&
+        response.status !== 408 &&
+        response.status !== 429
+      ) {
+        throw error;
+      }
+
+      lastError = error;
+    } catch (error) {
+      lastError = error;
+
+      // لا نكرر أخطاء HTTP الدائمة مثل 401 و403 و404.
+      if (
+        error.status >= 400 &&
+        error.status < 500 &&
+        error.status !== 408 &&
+        error.status !== 429
+      ) {
+        throw error;
+      }
+    }
+
+    if (attempt < MAX_ATTEMPTS) {
+      await wait(attempt * 1000);
+    }
+  }
+
+  throw lastError || new Error("تعذر الاتصال بالخادم بعد عدة محاولات.");
+}
+
 export default function StudentsClient({ profile }) {
   const [students, setStudents] = useState([]);
   const [search, setSearch] = useState("");
@@ -13,20 +81,15 @@ export default function StudentsClient({ profile }) {
     setError("");
 
     try {
-      const response = await fetch("/api/students", {
+      const result = await fetchWithRetry("/api/students", {
         method: "GET",
-        cache: "no-store",
       });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "تعذر تحميل بيانات الطلاب.");
-      }
 
       setStudents(Array.isArray(result.students) ? result.students : []);
     } catch (err) {
-      setError(err.message || "حدث خطأ أثناء تحميل الطلاب.");
+      setError(
+        err.message || "تعذر تحميل بيانات الطلاب بعد ثلاث محاولات."
+      );
     } finally {
       setLoading(false);
     }
@@ -51,12 +114,10 @@ export default function StudentsClient({ profile }) {
         .join(" ")
         .toLowerCase();
 
-      const guardianName = student.guardian?.full_name?.toLowerCase() || "";
+      const guardianName =
+        student.guardian?.full_name?.toLowerCase() || "";
 
-      return (
-        fullName.includes(query) ||
-        guardianName.includes(query)
-      );
+      return fullName.includes(query) || guardianName.includes(query);
     });
   }, [students, search]);
 
@@ -71,9 +132,7 @@ export default function StudentsClient({ profile }) {
   }
 
   function getCurrentClass(student) {
-    const enrollment = student.current_enrollment;
-
-    return enrollment?.class?.name || "غير مسجل في حلقة";
+    return student.current_enrollment?.class?.name || "غير مسجل في حلقة";
   }
 
   function formatDate(date) {
@@ -101,7 +160,9 @@ export default function StudentsClient({ profile }) {
 
         <div className="students-header-user">
           <strong>{profile.full_name}</strong>
-          <span>مدير النظام</span>
+          <span>
+            {profile.role === "admin" ? "مدير النظام" : "مشرف النظام"}
+          </span>
         </div>
       </header>
 
