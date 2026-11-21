@@ -44,6 +44,7 @@ const modules = {
 const moduleLinks = {
   "إدارة الطلاب": "/dashboard/students",
   "متابعة الطلاب": "/dashboard/students",
+  "الحلقات والمعلمون": "/dashboard/classes",
 };
 
 export default function DashboardClient({ profile }) {
