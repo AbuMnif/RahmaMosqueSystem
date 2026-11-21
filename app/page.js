@@ -50,6 +50,7 @@ export default function HomePage() {
           <nav className="public-nav">
             <a href="#home">الرئيسية</a>
             <a href="#about">عن المسجد</a>
+            <a href="#rahma">منظومة رحَمة</a>
             <a href="#programs">برامجنا</a>
             <a href="#contact">تواصل معنا</a>
           </nav>
@@ -64,9 +65,7 @@ export default function HomePage() {
       <section className="hero-section" id="home">
         <div className="public-container hero-content">
           <div className="hero-text">
-            <span className="hero-label">
-              مسجد التراحم
-            </span>
+            <span className="hero-label">مسجد التراحم</span>
 
             <h1>
               بالقرآن نرتقي،
@@ -101,14 +100,16 @@ export default function HomePage() {
             <div className="hero-decoration decoration-two" />
 
             <div className="hero-logo-card">
-              <Image
-                src="/images/mosque-logo.jpg"
-                alt="الشعار الرسمي لمسجد التراحم"
-                width={430}
-                height={430}
-                priority
-                className="hero-logo"
-              />
+              <div className="hero-logo-wrap">
+                <Image
+                  src="/images/mosque-logo.jpg"
+                  alt="الشعار الرسمي لمسجد التراحم"
+                  width={430}
+                  height={430}
+                  priority
+                  className="hero-logo"
+                />
+              </div>
 
               <div className="hero-logo-caption">
                 <strong>مسجد التراحم</strong>
@@ -142,6 +143,88 @@ export default function HomePage() {
             <p>
               نجعل تعليم القرآن وحفظه ومراجعته محورًا
               لرحلتنا التعليمية والتربوية.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="rahma-section" id="rahma">
+        <div className="public-container">
+          <div className="rahma-heading">
+            <span>رحَمة الإدارية</span>
+            <h2>ما هي منظومة رحَمة؟</h2>
+            <p>
+              منظومة رحَمة الإدارية هي منظومة رقمية تابعة
+              لمسجد التراحم، استمدت اسمها من اسم المسجد،
+              وجاءت لتكون امتدادًا لرسالته التعليمية والتربوية
+              في صورة تقنية متكاملة.
+            </p>
+          </div>
+
+          <div className="rahma-content">
+            <div className="rahma-main-card">
+              <div className="rahma-symbol">رَ</div>
+              <h3>من المسجد، وإلى مستقبل تعليمي أفضل</h3>
+              <p>
+                تهدف المنظومة إلى الارتقاء بجودة العمل
+                التعليمي والإداري، وتطوير أساليب متابعة
+                الطلاب، وتيسير التواصل بين المسجد والمعلمين
+                وأولياء الأمور، بما يسهم في بناء تجربة تعليمية
+                أكثر تنظيمًا وفاعلية.
+              </p>
+            </div>
+
+            <div className="rahma-goals">
+              <article>
+                <span>01</span>
+                <div>
+                  <h3>جودة تعليمية أفضل</h3>
+                  <p>
+                    تطوير متابعة الحفظ والمراجعة والتقييم،
+                    والاهتمام بمستوى تقدم كل طالب.
+                  </p>
+                </div>
+              </article>
+
+              <article>
+                <span>02</span>
+                <div>
+                  <h3>تواصل أقرب مع أولياء الأمور</h3>
+                  <p>
+                    تسهيل وصول ولي الأمر إلى معلومات أبنائه
+                    ومتابعة حضورهم ومستواهم وإنجازاتهم.
+                  </p>
+                </div>
+              </article>
+
+              <article>
+                <span>03</span>
+                <div>
+                  <h3>تنظيم إداري متكامل</h3>
+                  <p>
+                    جمع أعمال الإدارة والمعلمين والطلاب
+                    في منظومة واحدة تسهّل تنظيم العمل.
+                  </p>
+                </div>
+              </article>
+
+              <article>
+                <span>04</span>
+                <div>
+                  <h3>متابعة تحفظ مسيرة الطالب</h3>
+                  <p>
+                    توثيق رحلة الطالب التعليمية وإنجازاته
+                    ومراحل تقدمه بصورة منظمة.
+                  </p>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <div className="rahma-quote">
+            <span>رحَمة</span>
+            <p>
+              تقنية تخدم التعليم، وتنظم العمل، وتعزز التواصل.
             </p>
           </div>
         </div>
@@ -210,13 +293,9 @@ export default function HomePage() {
             </div>
           </div>
 
-          <p>
-            لخدمة كتاب الله ورعاية الأجيال.
-          </p>
+          <p>لخدمة كتاب الله ورعاية الأجيال.</p>
 
-          <Link href="/login">
-            دخول المنظومة
-          </Link>
+          <Link href="/login">دخول المنظومة</Link>
         </div>
 
         <div className="footer-bottom">
