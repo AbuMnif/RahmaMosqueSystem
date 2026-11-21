@@ -36,8 +36,6 @@ async function fetchWithRetry(url, options = {}) {
 
       error.status = response.status;
 
-      // أخطاء الصلاحيات والبيانات والطلبات غير الصحيحة
-      // لا تستفيد عادةً من إعادة المحاولة.
       if (
         response.status >= 400 &&
         response.status < 500 &&
@@ -51,7 +49,6 @@ async function fetchWithRetry(url, options = {}) {
     } catch (error) {
       lastError = error;
 
-      // لا نكرر أخطاء HTTP الدائمة مثل 401 و403 و404.
       if (
         error.status >= 400 &&
         error.status < 500 &&
@@ -117,7 +114,14 @@ export default function StudentsClient({ profile }) {
       const guardianName =
         student.guardian?.full_name?.toLowerCase() || "";
 
-      return fullName.includes(query) || guardianName.includes(query);
+      const guardianUsername =
+        student.guardian?.username?.toLowerCase() || "";
+
+      return (
+        fullName.includes(query) ||
+        guardianName.includes(query) ||
+        guardianUsername.includes(query)
+      );
     });
   }, [students, search]);
 
@@ -213,7 +217,9 @@ export default function StudentsClient({ profile }) {
           <div className="students-list-heading">
             <div>
               <h2>قائمة الطلاب</h2>
-              <p>ابحث عن الطالب بالاسم أو باسم ولي الأمر.</p>
+              <p>
+                ابحث عن الطالب أو ولي الأمر باستخدام الاسم أو اسم المستخدم.
+              </p>
             </div>
 
             <button
@@ -231,8 +237,8 @@ export default function StudentsClient({ profile }) {
               type="search"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="ابحث عن اسم الطالب أو ولي الأمر..."
-              aria-label="البحث عن طالب"
+              placeholder="ابحث عن اسم الطالب أو ولي الأمر أو اسم المستخدم..."
+              aria-label="البحث عن طالب أو ولي أمر"
             />
           </div>
 
@@ -275,7 +281,7 @@ export default function StudentsClient({ profile }) {
                   <tr>
                     <th>اسم الطالب</th>
                     <th>تاريخ الميلاد</th>
-                    <th>ولي الأمر</th>
+                    <th>ولي الأمر واسم المستخدم</th>
                     <th>الحلقة الحالية</th>
                     <th>الحالة</th>
                     <th>التفاصيل</th>
@@ -292,7 +298,29 @@ export default function StudentsClient({ profile }) {
                       <td>{formatDate(student.birth_date)}</td>
 
                       <td>
-                        {student.guardian?.full_name || "غير محدد"}
+                        <div className="guardian-table-info">
+                          <strong>
+                            {student.guardian?.full_name || "غير محدد"}
+                          </strong>
+
+                          <span>
+                            {student.guardian?.username
+                              ? `اسم المستخدم: ${student.guardian.username}`
+                              : "لا يوجد اسم مستخدم"}
+                          </span>
+
+                          <span
+                            className={
+                              student.guardian?.is_active
+                                ? "guardian-account-active"
+                                : "guardian-account-inactive"
+                            }
+                          >
+                            {student.guardian?.is_active
+                              ? "الحساب نشط"
+                              : "الحساب مغلق"}
+                          </span>
+                        </div>
                       </td>
 
                       <td>{getCurrentClass(student)}</td>
