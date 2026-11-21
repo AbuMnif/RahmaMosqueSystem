@@ -946,3 +946,223 @@ footer {
     font-size: 31px;
   }
 }
+/* =================================
+   CENTERED MOSQUE LOGO
+================================= */
+
+.hero-logo-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hero-logo-wrap {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.hero-logo {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+.hero-logo-caption {
+  width: 100%;
+  align-items: center;
+  text-align: center;
+}
+
+/* =================================
+   RAHMA INTRODUCTION
+================================= */
+
+.rahma-section {
+  padding: 100px 0;
+  background:
+    radial-gradient(
+      circle at 5% 10%,
+      rgba(66, 200, 45, 0.07),
+      transparent 30%
+    ),
+    #fff;
+}
+
+.rahma-heading {
+  max-width: 760px;
+  margin: 0 auto 55px;
+  text-align: center;
+}
+
+.rahma-heading > span {
+  color: var(--public-bright);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.rahma-heading h2 {
+  margin-top: 14px;
+  color: var(--public-green);
+  font-size: clamp(29px, 4vw, 40px);
+}
+
+.rahma-heading p {
+  margin-top: 20px;
+  color: #718075;
+  font-size: 16px;
+  line-height: 2.3;
+}
+
+.rahma-content {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 25px;
+  align-items: stretch;
+}
+
+.rahma-main-card {
+  padding: 38px;
+  border-radius: 20px;
+  background: var(--public-green);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.rahma-symbol {
+  width: 65px;
+  height: 65px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 27px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.13);
+  color: #b9eea9;
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.rahma-main-card h3 {
+  font-size: 23px;
+  line-height: 1.8;
+}
+
+.rahma-main-card p {
+  margin-top: 18px;
+  color: #d9e7dc;
+  font-size: 14px;
+  line-height: 2.3;
+}
+
+.rahma-goals {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+.rahma-goals article {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 23px 18px;
+  border: 1px solid #e9eee6;
+  border-radius: 15px;
+  background: #fff;
+}
+
+.rahma-goals article > span {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #edf8e9;
+  color: var(--public-green);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rahma-goals h3 {
+  color: var(--public-green);
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.rahma-goals p {
+  margin-top: 9px;
+  color: #7b867c;
+  font-size: 12px;
+  line-height: 2;
+}
+
+.rahma-quote {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 35px;
+  padding: 20px;
+  border-top: 1px solid #e9eee6;
+  color: #748076;
+  text-align: center;
+}
+
+.rahma-quote span {
+  color: var(--public-green);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.rahma-quote p {
+  font-size: 14px;
+}
+
+/* MOBILE */
+
+@media (max-width: 680px) {
+  .rahma-section {
+    padding: 70px 0;
+  }
+
+  .rahma-heading {
+    margin-bottom: 35px;
+  }
+
+  .rahma-heading p {
+    font-size: 14px;
+  }
+
+  .rahma-content {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .rahma-main-card {
+    padding: 28px 24px;
+  }
+
+  .rahma-main-card h3 {
+    font-size: 20px;
+  }
+
+  .rahma-goals {
+    grid-template-columns: 1fr;
+  }
+
+  .rahma-goals article {
+    padding: 20px 17px;
+  }
+
+  .rahma-quote {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
