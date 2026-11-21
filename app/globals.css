@@ -1166,3 +1166,110 @@ footer {
     gap: 8px;
   }
 }
+/* =================================
+   HERO WITHOUT LOGO CARD
+================================= */
+
+.hero-section {
+  min-height: 0;
+}
+
+.hero-content {
+  grid-template-columns: 1fr;
+  padding-top: 85px;
+  padding-bottom: 100px;
+}
+
+.hero-text {
+  width: 100%;
+  max-width: 760px;
+}
+
+.hero-text > p {
+  max-width: 650px;
+}
+
+/* =================================
+   REMOVE OLD LOGO ELEMENTS
+================================= */
+
+.hero-logo-area,
+.hero-logo-card,
+.hero-logo-wrap,
+.hero-logo-caption,
+.hero-decoration,
+.hero-logo {
+  display: none !important;
+}
+
+.rahma-symbol {
+  display: none !important;
+}
+
+/* =================================
+   BACK TO TOP BUTTON
+================================= */
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 20px;
+}
+
+.back-to-top {
+  position: fixed;
+  left: 22px;
+  bottom: 24px;
+  z-index: 1000;
+
+  width: 46px;
+  height: 46px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+
+  background: #174C35;
+  color: #fff;
+
+  box-shadow: 0 5px 18px rgba(23, 76, 53, 0.22);
+
+  font-size: 25px;
+  font-weight: 700;
+  line-height: 1;
+
+  text-decoration: none;
+
+  transition:
+    background 0.2s,
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+
+.back-to-top:hover {
+  background: #216344;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 22px rgba(23, 76, 53, 0.28);
+}
+
+.back-to-top:focus-visible {
+  outline: 3px solid #42C82D;
+  outline-offset: 4px;
+}
+
+@media (max-width: 680px) {
+  .hero-content {
+    padding-top: 65px;
+    padding-bottom: 85px;
+  }
+
+  .back-to-top {
+    left: 15px;
+    bottom: 18px;
+    width: 42px;
+    height: 42px;
+    font-size: 23px;
+  }
+}
