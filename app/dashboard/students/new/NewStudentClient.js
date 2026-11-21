@@ -315,7 +315,7 @@ export default function NewStudentClient({ profile }) {
                     </label>
 
                     <label>
-                      كلمة المرور الأولية
+                          كلمة المرور
                       <input
                         type="password"
                         name="password"
@@ -473,7 +473,7 @@ export default function NewStudentClient({ profile }) {
                 </div>
 
                 <img
-                  src="/images/mosque-stamp.jpeg"
+                  src="/images/mosque-stamp.JPG"
                   alt="الختم الإلكتروني لمسجد التراحم"
                 />
               </div>
