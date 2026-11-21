@@ -41,6 +41,11 @@ const modules = {
   ],
 };
 
+const moduleLinks = {
+  "إدارة الطلاب": "/dashboard/students",
+  "متابعة الطلاب": "/dashboard/students",
+};
+
 export default function DashboardClient({ profile }) {
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -67,9 +72,7 @@ export default function DashboardClient({ profile }) {
 
   return (
     <main className="dashboard-page" dir="rtl">
-
       <header className="dashboard-header">
-
         <a className="dashboard-brand" href="/">
           <img
             src="/images/mosque-logo.jpg"
@@ -83,7 +86,6 @@ export default function DashboardClient({ profile }) {
         </a>
 
         <div className="dashboard-user">
-
           <div className="user-avatar">
             {(profile.full_name || "م").trim().charAt(0)}
           </div>
@@ -102,15 +104,11 @@ export default function DashboardClient({ profile }) {
           >
             {loggingOut ? "جارٍ الخروج..." : "تسجيل الخروج"}
           </button>
-
         </div>
-
       </header>
 
       <div className="dashboard-content">
-
         <section className="dashboard-welcome">
-
           <div>
             <span className="dashboard-kicker">
               مسجد التراحم
@@ -125,11 +123,9 @@ export default function DashboardClient({ profile }) {
               اختر القسم الذي تريد العمل عليه.
             </p>
           </div>
-
         </section>
 
         <div className="section-title-row">
-
           <div>
             <span>مساحة العمل</span>
             <h2>الأقسام المتاحة</h2>
@@ -138,39 +134,46 @@ export default function DashboardClient({ profile }) {
           <span className="role-pill">
             {roleNames[profile.role] || "مستخدم"}
           </span>
-
         </div>
 
         <section className="module-grid">
+          {items.map(([title, description]) => {
+            const href = moduleLinks[title];
+            const isAvailable = Boolean(href);
 
-          {items.map(([title, description]) => (
+            return (
+              <article
+                className={`module-card ${
+                  isAvailable ? "module-card-active" : ""
+                }`}
+                key={title}
+              >
+                <span className="module-status">
+                  {isAvailable ? "متاح" : "قريبًا"}
+                </span>
 
-            <article className="module-card" key={title}>
+                <h3>{title}</h3>
 
-              <span className="module-status">
-                قريبًا
-              </span>
+                <p>{description}</p>
 
-              <h3>{title}</h3>
-
-              <p>{description}</p>
-
-              <div className="module-card-bottom">
-                سيتم تفعيل القسم ضمن مراحل البناء
-              </div>
-
-            </article>
-
-          ))}
-
+                <div className="module-card-bottom">
+                  {isAvailable ? (
+                    <a href={href}>
+                      الدخول إلى القسم
+                    </a>
+                  ) : (
+                    "سيتم تفعيل القسم ضمن مراحل البناء"
+                  )}
+                </div>
+              </article>
+            );
+          })}
         </section>
 
         <footer className="dashboard-footer">
           منظومة رحَمة الإدارية - مسجد التراحم
         </footer>
-
       </div>
-
     </main>
   );
 }
