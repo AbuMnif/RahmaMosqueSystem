@@ -1,0 +1,121 @@
+:root {
+–green: #174C35;
+–green-light: #42C82D;
+–gold: #D9BD38;
+–ink: #202820;
+–muted: #68756C;
+–surface: #FFFFFF;
+–background: #F5F7F2;
+}
+
+* {
+    box-sizing: border-box;
+    }
+
+html,
+body {
+margin: 0;
+min-height: 100%;
+}
+
+body {
+background: var(–background);
+color: var(–ink);
+font-family: Tahoma, Arial, sans-serif;
+}
+
+.welcome {
+min-height: 100vh;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+padding: 32px 18px;
+
+background:
+radial-gradient(
+circle at 15% 15%,
+rgba(66, 200, 45, 0.10),
+transparent 30%
+),
+radial-gradient(
+circle at 85% 85%,
+rgba(217, 189, 56, 0.10),
+transparent 28%
+),
+var(–background);
+}
+
+.welcomeCard {
+width: min(100%, 680px);
+padding: 54px 34px;
+text-align: center;
+background: var(–surface);
+border: 1px solid #E8EDE6;
+border-radius: 24px;
+box-shadow: 0 18px 55px rgba(23, 76, 53, 0.08);
+}
+
+.brandMark {
+width: 76px;
+height: 76px;
+display: grid;
+place-items: center;
+margin: 0 auto 20px;
+border-radius: 24px;
+background: var(–green);
+color: white;
+font-size: 42px;
+font-weight: 700;
+}
+
+.eyebrow {
+margin: 0 0 10px;
+color: var(–green);
+font-size: 16px;
+font-weight: 700;
+}
+
+h1 {
+margin: 0;
+color: var(–green);
+font-size: clamp(27px, 5vw, 40px);
+line-height: 1.5;
+}
+
+.description {
+max-width: 520px;
+margin: 18px auto 24px;
+color: var(–muted);
+font-size: 16px;
+line-height: 2;
+}
+
+.status {
+display: inline-flex;
+align-items: center;
+padding: 9px 18px;
+border-radius: 999px;
+background: #EDF8E9;
+color: var(–green);
+font-size: 14px;
+font-weight: 700;
+}
+
+footer {
+margin-top: 24px;
+color: var(–muted);
+font-size: 13px;
+text-align: center;
+}
+
+@media (max-width: 520px) {
+.welcomeCard {
+padding: 40px 22px;
+border-radius: 18px;
+}
+
+.description {
+font-size: 14px;
+}
+}
