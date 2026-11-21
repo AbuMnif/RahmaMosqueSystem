@@ -33,12 +33,22 @@ export async function POST(request) {
       );
     }
 
+    const {
+      data: { user },
+      error: userError,
+    } = await admin.auth.admin.getUserById(profile.id);
+
+    if (userError || !user?.email) {
+      return NextResponse.json(
+        { error: "تعذر العثور على حساب المصادقة" },
+        { status: 401 }
+      );
+    }
+
     const supabase = await createSupabaseServer();
 
-    const email = `${profile.username.toLowerCase()}@rahma.invalid`;
-
     const { error: loginError } = await supabase.auth.signInWithPassword({
-      email,
+      email: user.email,
       password,
     });
 
