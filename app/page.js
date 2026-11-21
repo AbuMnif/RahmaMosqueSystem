@@ -24,7 +24,7 @@ const sections = [
     number: "04",
     title: "التواصل مع الأسرة",
     description:
-      "تعزيز التواصل بين المسجد وأولياء الأمور لمتابعة رحلة أبنائهم التعليمية.",
+      "تعزيز التواصل مع أولياء الأمور لمتابعة رحلة أبنائهم التعليمية.",
   },
 ];
 
@@ -41,6 +41,7 @@ export default function HomePage() {
               height={65}
               priority
             />
+
             <span>
               <strong>مسجد التراحم</strong>
               <small>منظومة رحَمة الإدارية</small>
@@ -94,29 +95,6 @@ export default function HomePage() {
               تعليم · تربية · تحفيظ · تراحم
             </div>
           </div>
-
-          <div className="hero-logo-area">
-            <div className="hero-decoration decoration-one" />
-            <div className="hero-decoration decoration-two" />
-
-            <div className="hero-logo-card">
-              <div className="hero-logo-wrap">
-                <Image
-                  src="/images/mosque-logo.jpg"
-                  alt="الشعار الرسمي لمسجد التراحم"
-                  width={430}
-                  height={430}
-                  priority
-                  className="hero-logo"
-                />
-              </div>
-
-              <div className="hero-logo-caption">
-                <strong>مسجد التراحم</strong>
-                <span>منظومة رحَمة الإدارية</span>
-              </div>
-            </div>
-          </div>
         </div>
 
         <div className="hero-bottom">
@@ -163,8 +141,8 @@ export default function HomePage() {
 
           <div className="rahma-content">
             <div className="rahma-main-card">
-              <div className="rahma-symbol">رَ</div>
               <h3>من المسجد، وإلى مستقبل تعليمي أفضل</h3>
+
               <p>
                 تهدف المنظومة إلى الارتقاء بجودة العمل
                 التعليمي والإداري، وتطوير أساليب متابعة
@@ -302,6 +280,15 @@ export default function HomePage() {
           جميع الحقوق محفوظة © مسجد التراحم
         </div>
       </footer>
+
+      <a
+        href="#home"
+        className="back-to-top"
+        aria-label="العودة إلى أعلى الصفحة"
+        title="العودة إلى الأعلى"
+      >
+        ↑
+      </a>
     </main>
   );
 }
