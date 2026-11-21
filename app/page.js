@@ -83,10 +83,6 @@ export default function HomePage() {
               <a href="#about" className="primary-button">
                 تعرّف علينا
               </a>
-
-              <Link href="/login" className="secondary-button">
-                Login
-              </Link>
             </div>
 
             <div className="hero-note">
@@ -246,7 +242,7 @@ export default function HomePage() {
           </div>
 
           <Link href="/login" className="join-button">
-            Login
+            تسجيل الدخول
           </Link>
         </div>
       </section>
@@ -268,8 +264,6 @@ export default function HomePage() {
           </div>
 
           <p>لخدمة كتاب الله ورعاية الأجيال.</p>
-
-          <Link href="/login">Login</Link>
         </div>
 
         <div className="footer-bottom">
