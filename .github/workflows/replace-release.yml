@@ -1,0 +1,56 @@
+name: Replace repository with Awn v1.1.7 Online Only
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  replace:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract and validate release
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          unzip -q Awn-v1.1.7-online-only.zip -d /tmp/awn-release
+
+          SOURCE="/tmp/awn-release/awnwork"
+
+          test -f "$SOURCE/package.json"
+          test -f "$SOURCE/app/layout.js"
+          test -f "$SOURCE/app/api/educational-records/route.js"
+
+      - name: Replace project files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SOURCE="/tmp/awn-release/awnwork"
+          WORKFLOW=".github/workflows/replace-release.yml"
+
+          find . -mindepth 1 -maxdepth 1 \
+            ! -name '.git' \
+            -exec rm -rf {} +
+
+          cp -a "$SOURCE"/. .
+
+          rm -f Awn-v1.1.7-online-only.zip
+          rm -f "$WORKFLOW"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+
+          if ! git diff --cached --quiet; then
+            git commit -m "Release Awn v1.1.7 Online Only"
+            git push
+          fi
