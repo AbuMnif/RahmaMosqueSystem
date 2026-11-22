@@ -29,7 +29,7 @@ async function getManager() {
     profileError ||
     !profile ||
     !profile.is_active ||
-    !["admin", "supervisor"].includes(profile.role)
+    !["admin", "supervisor", "platform_supervisor"].includes(profile.role)
   ) {
     return {
       error: "ليس لديك صلاحية تنفيذ هذه العملية.",
@@ -173,6 +173,16 @@ export async function POST(request) {
       return NextResponse.json(
         { error: manager.error },
         { status: manager.status }
+      );
+    }
+
+    // مشرف المنصة للقراءة فقط، ولا يسمح له بإنشاء سجلات فعلية.
+    if (manager.profile.role === "platform_supervisor") {
+      return NextResponse.json(
+        {
+          error: "حساب مشرف المنصة مخصص للمشاهدة والمعاينة فقط.",
+        },
+        { status: 403 }
       );
     }
 
