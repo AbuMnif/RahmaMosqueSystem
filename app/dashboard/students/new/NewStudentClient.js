@@ -17,6 +17,8 @@ const initialForm = {
 };
 
 export default function NewStudentClient({ profile }) {
+  const isPlatformSupervisor = profile?.role === "platform_supervisor";
+
   const [form, setForm] = useState(initialForm);
   const [classes, setClasses] = useState([]);
   const [guardians, setGuardians] = useState([]);
@@ -63,6 +65,11 @@ export default function NewStudentClient({ profile }) {
     event.preventDefault();
     setError("");
 
+    if (!form.first_name.trim() || !form.last_name.trim()) {
+      setError("يرجى إدخال اسم الطالب.");
+      return;
+    }
+
     if (!form.class_id) {
       setError("يرجى اختيار الحلقة.");
       return;
@@ -79,10 +86,84 @@ export default function NewStudentClient({ profile }) {
     }
 
     if (
+      form.guardian_mode === "new" &&
+      form.password.length < 8
+    ) {
+      setError("كلمة المرور يجب ألا تقل عن 8 أحرف.");
+      return;
+    }
+
+    if (
       form.guardian_mode === "existing" &&
       !form.guardian_id
     ) {
       setError("يرجى اختيار ولي الأمر.");
+      return;
+    }
+
+    const selectedClass = classes.find(
+      (item) => item.id === form.class_id
+    );
+
+    if (!selectedClass) {
+      setError("الحلقة المحددة غير موجودة ضمن البيانات المتاحة.");
+      return;
+    }
+
+    if (isPlatformSupervisor) {
+      const selectedGuardian =
+        form.guardian_mode === "existing"
+          ? guardians.find(
+              (item) => item.id === form.guardian_id
+            )
+          : null;
+
+      if (
+        form.guardian_mode === "existing" &&
+        !selectedGuardian
+      ) {
+        setError("ولي الأمر المحدد غير موجود ضمن البيانات المتاحة.");
+        return;
+      }
+
+      const previewReceipt = {
+        is_preview: true,
+        student: {
+          first_name: form.first_name.trim(),
+          middle_name: form.middle_name.trim() || null,
+          last_name: form.last_name.trim(),
+          birth_date: form.birth_date || null,
+        },
+        guardian: {
+          full_name:
+            form.guardian_mode === "new"
+              ? form.guardian_name.trim()
+              : selectedGuardian.full_name,
+          username:
+            form.guardian_mode === "new"
+              ? form.username.trim()
+              : selectedGuardian.username,
+          is_new: form.guardian_mode === "new",
+        },
+        class: {
+          id: selectedClass.id,
+          name: selectedClass.name,
+        },
+        teacher_names: [],
+        registration_date: new Date().toISOString().slice(0, 10),
+        initial_password:
+          form.guardian_mode === "new"
+            ? form.password
+            : null,
+      };
+
+      setReceipt(previewReceipt);
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+
       return;
     }
 
@@ -136,7 +217,11 @@ export default function NewStudentClient({ profile }) {
     setReceipt(null);
     setForm(initialForm);
     setError("");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   }
 
   const studentName = receipt
@@ -167,7 +252,11 @@ export default function NewStudentClient({ profile }) {
         <div>
           <strong>{profile.full_name}</strong>
           <span>
-            {profile.role === "admin" ? "مدير النظام" : "مشرف النظام"}
+            {profile.role === "admin"
+              ? "مدير النظام"
+              : profile.role === "platform_supervisor"
+                ? "مشرف المنصة"
+                : "مشرف النظام"}
           </span>
         </div>
       </header>
@@ -181,6 +270,13 @@ export default function NewStudentClient({ profile }) {
               <p>
                 أدخل بيانات الطالب وولي الأمر والحلقة لإتمام التسجيل.
               </p>
+
+              {isPlatformSupervisor && (
+                <div className="new-student-error">
+                  وضع المعاينة: يمكنك تعبئة النموذج وعرض البطاقة وطباعتها،
+                  لكن لن يتم حفظ أي بيانات أو إنشاء أي حساب.
+                </div>
+              )}
             </div>
 
             <form
@@ -244,6 +340,7 @@ export default function NewStudentClient({ profile }) {
                       required
                     >
                       <option value="">اختر الحلقة</option>
+
                       {classes.map((item) => (
                         <option key={item.id} value={item.id}>
                           {item.name}
@@ -315,7 +412,7 @@ export default function NewStudentClient({ profile }) {
                     </label>
 
                     <label>
-                          كلمة المرور
+                      كلمة المرور
                       <input
                         type="password"
                         name="password"
@@ -354,7 +451,11 @@ export default function NewStudentClient({ profile }) {
 
               <div className="new-student-actions">
                 <button type="submit" disabled={saving}>
-                  {saving ? "جارٍ تسجيل الطالب..." : "إتمام تسجيل الطالب"}
+                  {isPlatformSupervisor
+                    ? "معاينة بطاقة التسجيل"
+                    : saving
+                      ? "جارٍ تسجيل الطالب..."
+                      : "إتمام تسجيل الطالب"}
                 </button>
 
                 <a href="/dashboard/students">إلغاء</a>
@@ -364,9 +465,16 @@ export default function NewStudentClient({ profile }) {
         ) : (
           <section className="registration-result">
             <div className="registration-success no-print">
-              <h1>تم تسجيل الطالب بنجاح</h1>
+              <h1>
+                {receipt.is_preview
+                  ? "معاينة بطاقة تسجيل الطالب"
+                  : "تم تسجيل الطالب بنجاح"}
+              </h1>
+
               <p>
-                تم إنشاء بيانات التسجيل وربط الطالب بولي الأمر والحلقة.
+                {receipt.is_preview
+                  ? "هذه بطاقة تجريبية للمعاينة فقط. لم يتم إنشاء طالب أو حساب ولي أمر، ولم تُحفظ أي بيانات."
+                  : "تم إنشاء بيانات التسجيل وربط الطالب بولي الأمر والحلقة."}
               </p>
             </div>
 
@@ -402,7 +510,9 @@ export default function NewStudentClient({ profile }) {
 
                   <div>
                     <span>تاريخ الميلاد</span>
-                    <strong>{formatDate(receipt.student.birth_date)}</strong>
+                    <strong>
+                      {formatDate(receipt.student.birth_date)}
+                    </strong>
                   </div>
 
                   <div>
@@ -437,11 +547,18 @@ export default function NewStudentClient({ profile }) {
 
                   <div>
                     <span>اسم المستخدم</span>
-                    <strong dir="ltr">{receipt.guardian.username}</strong>
+                    <strong dir="ltr">
+                      {receipt.guardian.username}
+                    </strong>
                   </div>
 
                   <div className="registration-password">
-                    <span>كلمة المرور الأولية</span>
+                    <span>
+                      {receipt.is_preview
+                        ? "كلمة المرور التجريبية"
+                        : "كلمة المرور الأولية"}
+                    </span>
+
                     <strong dir="ltr">
                       {receipt.initial_password ||
                         "الحساب موجود مسبقًا — استخدم كلمة المرور الحالية"}
@@ -450,9 +567,11 @@ export default function NewStudentClient({ profile }) {
                 </div>
 
                 <p className="registration-account-note">
-                  {receipt.guardian.is_new
-                    ? "يرجى تسليم بيانات الدخول لولي الأمر والاحتفاظ بها في مكان آمن."
-                    : "تم ربط الطالب بحساب ولي الأمر الموجود، ولم يتم تغيير كلمة المرور."}
+                  {receipt.is_preview
+                    ? "بيانات الحساب المعروضة تجريبية للمعاينة فقط، ولم يتم إنشاء الحساب."
+                    : receipt.guardian.is_new
+                      ? "يرجى تسليم بيانات الدخول لولي الأمر والاحتفاظ بها في مكان آمن."
+                      : "تم ربط الطالب بحساب ولي الأمر الموجود، ولم يتم تغيير كلمة المرور."}
                 </p>
               </section>
 
@@ -469,7 +588,9 @@ export default function NewStudentClient({ profile }) {
               <div className="registration-card-bottom">
                 <div>
                   <strong>إدارة مسجد التراحم</strong>
-                  <span>نسأل الله أن يجعل القرآن ربيع قلبه ونور صدره.</span>
+                  <span>
+                    نسأل الله أن يجعل القرآن ربيع قلبه ونور صدره.
+                  </span>
                 </div>
 
                 <img
@@ -493,7 +614,9 @@ export default function NewStudentClient({ profile }) {
                 className="registration-secondary-button"
                 onClick={startNewStudent}
               >
-                تسجيل طالب آخر
+                {receipt.is_preview
+                  ? "معاينة طالب آخر"
+                  : "تسجيل طالب آخر"}
               </button>
 
               <a href="/dashboard/students">
@@ -502,8 +625,9 @@ export default function NewStudentClient({ profile }) {
             </div>
 
             <p className="registration-security-note no-print">
-              احتفظ بنسخة البطاقة وسلم بيانات الدخول لولي الأمر.
-              لن يمكن استرجاع كلمة المرور بعد مغادرة هذه الصفحة.
+              {receipt.is_preview
+                ? "هذه معاينة مؤقتة. لن تُحفظ بيانات النموذج أو كلمة المرور في قاعدة البيانات."
+                : "احتفظ بنسخة البطاقة وسلم بيانات الدخول لولي الأمر. لن يمكن استرجاع كلمة المرور بعد مغادرة هذه الصفحة."}
             </p>
           </section>
         )}
