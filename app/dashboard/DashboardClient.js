@@ -5,6 +5,7 @@ import { useState } from "react";
 const roleNames = {
   admin: "مدير النظام",
   supervisor: "المشرف",
+  platform_supervisor: "مشرف المنصة",
   teacher: "المعلم",
   guardian: "ولي الأمر",
 };
@@ -24,6 +25,16 @@ const modules = {
     ["طلبات التعديل", "مراجعة طلبات المعلمين واعتمادها أو رفضها"],
     ["الأنشطة والموافقات", "متابعة الأنشطة وموافقات أولياء الأمور"],
     ["التقارير", "متابعة الأداء والحضور والإنجاز"],
+  ],
+
+  platform_supervisor: [
+    ["إدارة الطلاب", "مشاهدة جميع الطلاب وملفاتهم وبيانات أولياء أمورهم"],
+    ["الحلقات والمعلمون", "مشاهدة الحلقات والمعلمين وتوزيعاتهم"],
+    ["السجلات التعليمية", "الاطلاع على الحضور والحفظ والمراجعة والاختبارات"],
+    ["الأنشطة والموافقات", "مشاهدة الأنشطة وموافقات أولياء الأمور"],
+    ["طلبات التعديل", "مشاهدة طلبات التعديل وحالاتها"],
+    ["إدارة الحسابات", "مشاهدة حسابات المعلمين وأولياء الأمور"],
+    ["التقارير", "الاطلاع على التقارير ومؤشرات الأداء"],
   ],
 
   teacher: [
@@ -51,6 +62,8 @@ export default function DashboardClient({ profile }) {
   const [loggingOut, setLoggingOut] = useState(false);
 
   const items = modules[profile.role] || [];
+  const isPlatformSupervisor =
+    profile.role === "platform_supervisor";
 
   async function logout() {
     setLoggingOut(true);
@@ -121,8 +134,26 @@ export default function DashboardClient({ profile }) {
 
             <p>
               نسعد بوجودك في منظومة رحَمة الإدارية.
-              اختر القسم الذي تريد العمل عليه.
+              اختر القسم الذي تريد الاطلاع عليه.
             </p>
+
+            {isPlatformSupervisor && (
+              <div
+                style={{
+                  marginTop: "18px",
+                  padding: "13px 16px",
+                  border: "1px solid #d9bd38",
+                  borderRadius: "12px",
+                  background: "#fffdf2",
+                  color: "#66571b",
+                  lineHeight: 1.8,
+                }}
+              >
+                حسابك مخصص لمشاهدة بيانات المنظومة.
+                يمكنك استعراض الأقسام وتجربة النماذج،
+                لكن لن يُسمح بحفظ أي تغييرات دائمة.
+              </div>
+            )}
           </div>
         </section>
 
