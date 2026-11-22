@@ -1,4 +1,6 @@
 import "./globals.css";
+import NetworkStatus from "./components/NetworkStatus";
+import DataPreloader from "./components/DataPreloader";
 
 export const metadata = {
   title: "منظومة عَون الإدارية | مسجد التراحم",
@@ -23,7 +25,7 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="ar" dir="rtl">
-      <body>{children}</body>
+      <body><NetworkStatus /><DataPreloader />{children}</body>
     </html>
   );
 }

@@ -371,7 +371,7 @@ export default function ClassesClient({ profile }) {
                   <tr>
                     <th>اسم الحلقة</th>
                     <th>عدد الطلاب</th>
-                    <th>المعلمون</th>
+                    <th>المعلمون والإسناد وأيام التدريس</th>
                     <th>الحالة</th>
 
                     {!isPlatformSupervisor && (
@@ -394,15 +394,24 @@ export default function ClassesClient({ profile }) {
                       <td>{item.student_count ?? 0}</td>
 
                       <td>
-                        {item.teachers?.length
-                          ? item.teachers
-                              .map(
-                                (assignment) =>
-                                  assignment.teacher?.full_name ||
-                                  "معلم غير معروف"
-                              )
-                              .join("، ")
-                          : "لم يُسند معلم بعد"}
+                        {item.teachers?.length ? (
+                          <div className="classes-assignment-list">
+                            {item.teachers.map((assignment) => (
+                              <div className="classes-assignment-item" key={assignment.id}>
+                                <strong>{assignment.teacher?.full_name || "معلم غير معروف"}</strong>
+                                <span className="classes-assignment-label">مسند إلى الحلقة</span>
+                                <small>
+                                  <b>أيام التدريس:</b>{" "}
+                                  {Array.isArray(assignment.teaching_days) && assignment.teaching_days.length
+                                    ? assignment.teaching_days.join("، ")
+                                    : "لم تحدد أيام التدريس"}
+                                </small>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="classes-no-assignment">لم يُسند معلم لهذه الحلقة بعد</span>
+                        )}
                       </td>
 
                       <td>

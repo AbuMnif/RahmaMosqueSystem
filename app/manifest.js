@@ -1,13 +1,13 @@
 export default function manifest() {
   return {
-    id: "/",
+    id: "/dashboard",
     name: "منظومة عَون الإدارية",
     short_name: "عَون",
     description:
       "منظومة رقمية أُنشئت من قبل مسجد التراحم لتوحيد الأعمال التعليمية والإدارية.",
     lang: "ar",
     dir: "rtl",
-    start_url: "/",
+    start_url: "/dashboard",
     scope: "/",
     display: "standalone",
     orientation: "portrait",

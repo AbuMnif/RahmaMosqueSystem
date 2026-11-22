@@ -284,7 +284,7 @@
 .classes-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 700px;
+  min-width: 850px;
 }
 
 .classes-table th {
@@ -315,6 +315,51 @@
 .classes-table td:first-child small {
   display: block;
   margin-top: 3px;
+  color: var(--c-muted);
+  font-size: 11px;
+}
+
+
+.classes-assignment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 190px;
+}
+
+.classes-assignment-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 9px 10px;
+  background: #F7FAF5;
+  border: 1px solid #E5EDE2;
+  border-radius: 9px;
+}
+
+.classes-assignment-item strong {
+  color: var(--c-green);
+  font-size: 12px;
+}
+
+.classes-assignment-label {
+  color: #43814A;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.classes-assignment-item small {
+  color: var(--c-muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.classes-assignment-item small b {
+  color: var(--c-ink);
+}
+
+.classes-no-assignment {
   color: var(--c-muted);
   font-size: 11px;
 }

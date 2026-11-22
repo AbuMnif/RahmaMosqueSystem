@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { createSupabaseServer } from "../lib/supabaseServer";
 import Image from "next/image";
 import Link from "next/link";
 import BackToTop from "./components/BackToTop";
@@ -29,7 +31,13 @@ const sections = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = await createSupabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    const { data: profile } = await supabase.from("profiles").select("is_active").eq("id", user.id).maybeSingle();
+    if (profile?.is_active) redirect("/dashboard");
+  }
   return (
     <main className="public-site" dir="rtl" id="top">
       <header className="public-header">

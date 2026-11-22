@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -10,6 +10,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/auth/session", { cache: "no-store" }).then(r => r.json()).then(data => {
+      if (active && data.authenticated) router.replace("/dashboard");
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [router]);
 
   async function handleLogin(event) {
     event.preventDefault();
