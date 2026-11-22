@@ -6,7 +6,10 @@ export const dynamic = "force-dynamic";
 
 async function getManager() {
   const supabase = await createSupabaseServer();
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
   if (error || !user) {
     return { error: "يجب تسجيل الدخول أولًا.", status: 401 };
@@ -24,15 +27,15 @@ async function getManager() {
     profileError ||
     !profile ||
     !profile.is_active ||
-    !["admin", "supervisor"].includes(profile.role)
+    !["admin", "supervisor", "platform_supervisor"].includes(profile.role)
   ) {
     return {
-      error: "ليس لديك صلاحية إدارة الحلقات.",
+      error: "ليس لديك صلاحية الوصول إلى الحلقات.",
       status: 403,
     };
   }
 
-  return { admin };
+  return { admin, profile };
 }
 
 export async function GET() {
@@ -135,9 +138,24 @@ export async function GET() {
   }
 }
 
+async function requireEditor() {
+  const manager = await getManager();
+
+  if (manager.error) return manager;
+
+  if (manager.profile.role === "platform_supervisor") {
+    return {
+      error: "حساب مشرف المنصة مخصص للمشاهدة فقط.",
+      status: 403,
+    };
+  }
+
+  return manager;
+}
+
 export async function POST(request) {
   try {
-    const manager = await getManager();
+    const manager = await requireEditor();
 
     if (manager.error) {
       return NextResponse.json(
@@ -210,7 +228,7 @@ export async function POST(request) {
 
 export async function PATCH(request) {
   try {
-    const manager = await getManager();
+    const manager = await requireEditor();
 
     if (manager.error) {
       return NextResponse.json(
