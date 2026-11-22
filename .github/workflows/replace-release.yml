@@ -1,0 +1,78 @@
+name: Replace repository with Awn v1.1.6
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  replace:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate and extract release
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ARCHIVE="Awn-v1.1.6.zip"
+          SOURCE_DIR="/tmp/awn-release/awnwork"
+          WORKFLOW=".github/workflows/replace-release.yml"
+
+          if [ ! -f "$ARCHIVE" ]; then
+            echo "Release archive not found: $ARCHIVE"
+            exit 1
+          fi
+
+          rm -rf /tmp/awn-release
+          mkdir -p /tmp/awn-release
+
+          unzip -q "$ARCHIVE" -d /tmp/awn-release
+
+          if [ ! -d "$SOURCE_DIR" ]; then
+            echo "Expected project folder awnwork was not found."
+            exit 1
+          fi
+
+          if [ ! -f "$SOURCE_DIR/package.json" ]; then
+            echo "package.json was not found. Aborting."
+            exit 1
+          fi
+
+      - name: Replace project files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SOURCE_DIR="/tmp/awn-release/awnwork"
+          WORKFLOW=".github/workflows/replace-release.yml"
+
+          # Remove previous project files while preserving Git metadata.
+          find . -mindepth 1 -maxdepth 1 \
+            ! -name '.git' \
+            -exec rm -rf {} +
+
+          # Copy the new release.
+          cp -a "$SOURCE_DIR"/. .
+
+          # Remove the uploaded archive and one-time workflow.
+          rm -f "Awn-v1.1.6.zip"
+          rm -f "$WORKFLOW"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "No project changes detected."
+          else
+            git commit -m "Release Awn v1.1.6"
+            git push
+          fi
