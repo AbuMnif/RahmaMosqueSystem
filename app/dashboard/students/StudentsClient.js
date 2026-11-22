@@ -68,6 +68,9 @@ async function fetchWithRetry(url, options = {}) {
 }
 
 export default function StudentsClient({ profile }) {
+  const isPlatformSupervisor =
+    profile?.role === "platform_supervisor";
+
   const [students, setStudents] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -155,6 +158,12 @@ export default function StudentsClient({ profile }) {
     }).format(parsedDate);
   }
 
+  const roleName = {
+    admin: "مدير النظام",
+    supervisor: "مشرف النظام",
+    platform_supervisor: "مشرف المنصة",
+  }[profile?.role] || "مستخدم";
+
   return (
     <main className="students-page" dir="rtl">
       <header className="students-header">
@@ -164,9 +173,7 @@ export default function StudentsClient({ profile }) {
 
         <div className="students-header-user">
           <strong>{profile.full_name}</strong>
-          <span>
-            {profile.role === "admin" ? "مدير النظام" : "مشرف النظام"}
-          </span>
+          <span>{roleName}</span>
         </div>
       </header>
 
@@ -184,13 +191,22 @@ export default function StudentsClient({ profile }) {
             </p>
           </div>
 
-          <a
-            href="/dashboard/students/new"
-            className="students-add-button"
-          >
-            إضافة طالب جديد
-          </a>
+          {!isPlatformSupervisor && (
+            <a
+              href="/dashboard/students/new"
+              className="students-add-button"
+            >
+              إضافة طالب جديد
+            </a>
+          )}
         </section>
+
+        {isPlatformSupervisor && (
+          <div className="students-message">
+            أنت تستخدم حساب مشرف المنصة. يمكنك مشاهدة بيانات الطلاب
+            والبحث فيها، دون إضافة أو تعديل أو حذف أي بيانات.
+          </div>
+        )}
 
         <section className="students-summary">
           <div className="students-summary-card">
@@ -268,7 +284,7 @@ export default function StudentsClient({ profile }) {
 
               <p>
                 {students.length === 0
-                  ? "يمكنك البدء بإضافة الطلاب إلى المنظومة."
+                  ? "لا توجد بيانات طلاب لعرضها حاليًا."
                   : "تأكد من كتابة الاسم بشكل صحيح وحاول مرة أخرى."}
               </p>
             </div>
