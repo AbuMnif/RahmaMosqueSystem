@@ -2,10 +2,6 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import * as XLSX from "xlsx";
 
-const DB_NAME="awn-educational-v1", STORE="records";
-function openDB(){return new Promise((resolve,reject)=>{const r=indexedDB.open(DB_NAME,1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(STORE))r.result.createObjectStore(STORE)};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
-async function dbGet(key){const db=await openDB();return new Promise((res,rej)=>{const t=db.transaction(STORE,"readonly").objectStore(STORE).get(key);t.onsuccess=()=>res(t.result);t.onerror=()=>rej(t.error)})}
-async function dbSet(key,value){const db=await openDB();return new Promise((res,rej)=>{const t=db.transaction(STORE,"readwrite").objectStore(STORE).put(value,key);t.oncomplete=()=>res();t.onerror=()=>rej(t.error)})}
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
 const nameOf=s=>[s?.first_name,s?.middle_name,s?.last_name].filter(Boolean).join(" ");
 const id=()=>crypto.randomUUID();
@@ -17,7 +13,7 @@ const ratingLabels={excellent:"متقن",very_good:"جيد جدًا",good:"جي�
 const empty={classes:[],students:[],attendance:[],memorization:[],exams:[],notes:[],enrollments:[],assignments:[],examResults:[],teachers:[],auditLogs:[]};
 
 export default function EducationalRecordsClient({profile}){
- const [data,setData]=useState(empty),[online,setOnline]=useState(true),[loading,setLoading]=useState(true),[loadError,setLoadError]=useState(""),[cached,setCached]=useState(false),[notice,setNotice]=useState(""),[pending,setPending]=useState(0),[tab,setTab]=useState("overview"),[classFilter,setClassFilter]=useState("all"),[studentFilter,setStudentFilter]=useState("all"),[from,setFrom]=useState(""),[to,setTo]=useState(""),[modal,setModal]=useState(""),[form,setForm]=useState({class_id:"",student_id:"",attendance_date:today(),status:"present",record_date:today(),record_type:"new_memorization",surah_number:"1",from_ayah:"1",to_ayah:"1",verbal_rating:"excellent",note_date:today(),note:"",exam_date:today(),title:"",description:"",exam_id:"",score:"",notes:""}),[prepClass,setPrepClass]=useState(""),[prepDate,setPrepDate]=useState(today()),[attendanceMarks,setAttendanceMarks]=useState({}),[savingSheet,setSavingSheet]=useState(false),[savingRecord,setSavingRecord]=useState(false);
+ const [data,setData]=useState(empty),[loading,setLoading]=useState(true),[loadError,setLoadError]=useState(""),[notice,setNotice]=useState(""),[tab,setTab]=useState("overview"),[classFilter,setClassFilter]=useState("all"),[studentFilter,setStudentFilter]=useState("all"),[from,setFrom]=useState(""),[to,setTo]=useState(""),[modal,setModal]=useState(""),[form,setForm]=useState({class_id:"",student_id:"",attendance_date:today(),status:"present",record_date:today(),record_type:"new_memorization",surah_number:"1",from_ayah:"1",to_ayah:"1",verbal_rating:"excellent",note_date:today(),note:"",exam_date:today(),title:"",description:"",exam_id:"",score:"",notes:""}),[prepClass,setPrepClass]=useState(""),[prepDate,setPrepDate]=useState(today()),[attendanceMarks,setAttendanceMarks]=useState({}),[savingSheet,setSavingSheet]=useState(false),[savingRecord,setSavingRecord]=useState(false);
  const saveLock=useRef(false);
  useEffect(()=>{const selected=new URLSearchParams(window.location.search).get("student");if(selected)setStudentFilter(selected)},[]);
  const canWrite=["admin","supervisor","teacher"].includes(profile.role);
@@ -34,49 +30,44 @@ export default function EducationalRecordsClient({profile}){
  useEffect(()=>{if(!prepClass&&data.classes.length)setPrepClass(data.classes[0].id)},[data.classes,prepClass]);
  useEffect(()=>{setAttendanceMarks(existingPrepAttendance)},[prepClass,prepDate,existingPrepAttendance]);
  const reload=useCallback(async()=>{
-  setOnline(navigator.onLine);
-  try{const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),18000);let r;try{r=await fetch("/api/educational-records",{cache:"no-store",signal:controller.signal})}finally{clearTimeout(timeout)}if(!r.ok)throw new Error("fetch");const j=await r.json();if(!j.success)throw new Error("fetch");setData(j.data);await dbSet(`snapshot:${profile.id}`,j.data).catch(()=>{});setCached(true);setLoadError("");setNotice("");setLoading(false)}catch{const old=await dbGet(`snapshot:${profile.id}`).catch(()=>null);if(old){setData(old);setLoadError("");const q=await dbGet(`queue:${profile.id}`).catch(()=>[]);(q||[]).forEach(item=>{const p=item.payload,local={...p,id:`local-${p.client_operation_id}`,created_at:new Date().toISOString()};if(item.operation==="attendance")old.attendance=[local,...old.attendance];if(item.operation==="attendance_batch")old.attendance=[...(p.rows||[]).map(row=>({...row,id:`local-${row.client_operation_id}`,class_id:p.class_id,attendance_date:p.attendance_date,status:row.present?"present":"absent",created_at:new Date().toISOString()})),...old.attendance];if(item.operation==="memorization")old.memorization=[local,...old.memorization];if(item.operation==="note")old.notes=[local,...old.notes];if(item.operation==="exam")old.exams=[local,...old.exams];if(item.operation==="exam_result")old.examResults=[local,...old.examResults]});setData({...old});setPending((q||[]).length);setCached(true);setNotice("")}else {const message=navigator.onLine?"تعذر تحميل السجلات من الخادم. لم نعرض أصفارًا حتى لا تبدو البيانات وكأنها فارغة. اضغط إعادة المحاولة.":"لا يوجد اتصال ولا توجد بيانات محفوظة لهذا الحساب بعد.";setLoadError(message);setNotice("")}setLoading(false)}
- },[profile.id]);
- const updatePending=useCallback(async()=>{const q=await dbGet(`queue:${profile.id}`).catch(()=>[]);setPending((q||[]).length)},[profile.id]);
- const sync=useCallback(async()=>{if(!navigator.onLine)return;let q=await dbGet(`queue:${profile.id}`).catch(()=>[]);if(!q?.length)return;const left=[];for(const item of q){try{const r=await fetch("/api/educational-records",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(item)});if(!r.ok)left.push(item)}catch{left.push(item)}}await dbSet(`queue:${profile.id}`,left);setPending(left.length);if(q.length!==left.length){await reload();setNotice(left.length?`تمت مزامنة بعض العمليات، والمتبقي ${left.length}.`:"تمت مزامنة جميع السجلات المحفوظة دون اتصال.")}}
- ,[reload,profile.id]);
- useEffect(()=>{reload();updatePending();if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{});const onlineFn=()=>{setOnline(true);sync();reload()};const offlineFn=()=>setOnline(false);window.addEventListener("online",onlineFn);window.addEventListener("offline",offlineFn);return()=>{window.removeEventListener("online",onlineFn);window.removeEventListener("offline",offlineFn)}},[reload,sync,updatePending]);
- function applyLocal(item){
-  const p=item.payload,local={...p,id:`local-${p.client_operation_id}`,created_at:new Date().toISOString()};
-  const batchRows=item.operation==="attendance_batch"?(p.rows||[]).map(row=>({...row,id:`local-${row.client_operation_id}`,class_id:p.class_id,attendance_date:p.attendance_date,status:row.present?"present":"absent",created_at:new Date().toISOString()})):[];
-  setData(prev=>({...prev,
-   ...(item.operation==="attendance"?{attendance:[local,...prev.attendance]}:{}),
-   ...(item.operation==="attendance_batch"?{attendance:[...batchRows,...prev.attendance.filter(old=>!(old.class_id===p.class_id&&old.attendance_date===p.attendance_date&&batchRows.some(row=>row.student_id===old.student_id)))]}:{}),
-   ...(item.operation==="memorization"?{memorization:[local,...prev.memorization]}:{}),
-   ...(item.operation==="note"?{notes:[local,...prev.notes]}:{}),
-   ...(item.operation==="exam"?{exams:[local,...prev.exams]}:{}),
-   ...(item.operation==="exam_result"?{examResults:[local,...prev.examResults]}:{})
-  }));
+  setLoading(true);setLoadError("");
+  if(typeof navigator!=="undefined"&&!navigator.onLine){setLoadError("يلزم الاتصال بالإنترنت لعرض السجلات التعليمية.");setLoading(false);return}
+  try{
+   const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),25000);
+   let response;try{response=await fetch("/api/educational-records",{cache:"no-store",signal:controller.signal})}finally{clearTimeout(timeout)}
+   const result=await response.json().catch(()=>({}));
+   if(!response.ok||result.success!==true)throw new Error(result.error||`تعذر تحميل السجلات (HTTP ${response.status}).`);
+   setData(result.data||empty);setLoadError("");
+  }catch(error){setLoadError(error.name==="AbortError"?"استغرق تحميل السجلات وقتًا أطول من المتوقع. تحقق من الاتصال ثم أعد المحاولة.":error.message||"تعذر الاتصال بالخادم لتحميل السجلات.")}
+  finally{setLoading(false)}
+ },[]);
+ useEffect(()=>{reload()},[reload]);
+ async function save(operation,payload){
+  if(saveLock.current)return;
+  if(typeof navigator!=="undefined"&&!navigator.onLine){setNotice("لا يمكن الحفظ دون اتصال بالإنترنت. اتصل بالإنترنت ثم أعد المحاولة.");return}
+  saveLock.current=true;setSavingRecord(true);setNotice("");
+  const item={operation,payload:{...payload,client_operation_id:id()}};
+  try{
+   const response=await fetch("/api/educational-records",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(item),cache:"no-store"});
+   const result=await response.json().catch(()=>({}));
+   if(!response.ok||result.success!==true)throw new Error(result.error||"لم يؤكد الخادم حفظ السجل.");
+   setModal("");setNotice("تم حفظ السجل بنجاح.");await reload();
+  }catch(error){setNotice(error.message||"تعذر حفظ السجل على الخادم. لم يتم حفظه محليًا.")}
+  finally{saveLock.current=false;setSavingRecord(false)}
  }
- async function save(operation,payload){if(saveLock.current)return;saveLock.current=true;setSavingRecord(true);const item={operation,payload:{...payload,client_operation_id:id()}};try{if(!navigator.onLine){const q=await dbGet(`queue:${profile.id}`).catch(()=>[]);await dbSet(`queue:${profile.id}`,[...(q||[]),item]);applyLocal(item);setPending((q||[]).length+1);setModal("");setNotice("تم الحفظ على هذا الجهاز بنجاح، وستتم المزامنة عند عودة الاتصال.");return}const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),20000);let r;try{r=await fetch("/api/educational-records",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(item),signal:controller.signal})}finally{clearTimeout(timeout)}const j=await r.json().catch(()=>({}));if(!r.ok||j.success!==true)throw new Error(j.error||"لم يؤكد الخادم حفظ السجل.");setModal("");setNotice("تم حفظ السجل بنجاح.");await reload()}catch(e){if(!navigator.onLine||e.name==="AbortError"||e instanceof TypeError){const q=await dbGet(`queue:${profile.id}`).catch(()=>[]);await dbSet(`queue:${profile.id}`,[...(q||[]),item]);applyLocal(item);setPending((q||[]).length+1);setModal("");setNotice("تعذر تأكيد الحفظ من الخادم؛ حُفظت العملية محليًا مرة واحدة وستتم مزامنتها تلقائيًا.")}else setNotice(e.message||"تعذر حفظ السجل.")}finally{saveLock.current=false;setSavingRecord(false)}}
  async function saveAttendanceSheet(){
   if(savingSheet)return;
+  if(typeof navigator!=="undefined"&&!navigator.onLine){setNotice("لا يمكن حفظ كشف التحضير دون اتصال بالإنترنت.");return}
   if(!prepClass||!prepStudents.length){setNotice("اختر حلقة تحتوي على طلاب مسجلين.");return}
-  setSavingSheet(true);
+  setSavingSheet(true);setNotice("");
   const item={operation:"attendance_batch",payload:{class_id:prepClass,attendance_date:prepDate,rows:prepStudents.map(student=>({student_id:student.id,present:Boolean(attendanceMarks[student.id]),client_operation_id:id()}))}};
   try{
-   if(!navigator.onLine){
-    const q=await dbGet(`queue:${profile.id}`).catch(()=>[]);
-    await dbSet(`queue:${profile.id}`,[...(q||[]),item]);applyLocal(item);setPending((q||[]).length+1);
-    setNotice("تم حفظ كشف التحضير على الجهاز. ستتم مزامنته عند عودة الاتصال.");return;
-   }
-   const response=await fetch("/api/educational-records",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(item)});
-   const result=await response.json();
-   if(!response.ok)throw new Error(result.error||"تعذر حفظ كشف التحضير.");
-   setNotice(`تم حفظ تحضير ${result.count||prepStudents.length} طالبًا بنجاح.`);
-   await reload();
-  }catch(error){
-   if(!navigator.onLine||error.name==="AbortError"||error instanceof TypeError){
-    const q=await dbGet(`queue:${profile.id}`).catch(()=>[]);
-    await dbSet(`queue:${profile.id}`,[...(q||[]),item]);applyLocal(item);setPending((q||[]).length+1);
-    setNotice("تعذر تأكيد الإرسال؛ حُفظ الكشف محليًا مرة واحدة وسيُزامن تلقائيًا.");
-   }else setNotice(error.message||"تعذر حفظ كشف التحضير.");
-  }finally{setSavingSheet(false)}
+   const response=await fetch("/api/educational-records",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(item),cache:"no-store"});
+   const result=await response.json().catch(()=>({}));
+   if(!response.ok||result.success!==true)throw new Error(result.error||"تعذر حفظ كشف التحضير.");
+   setNotice(`تم حفظ تحضير ${result.count||prepStudents.length} طالبًا بنجاح.`);await reload();
+  }catch(error){setNotice(error.message||"تعذر حفظ كشف التحضير على الخادم.")}
+  finally{setSavingSheet(false)}
  }
  function openForm(kind){setForm(f=>({...f,class_id:f.class_id||data.classes[0]?.id||"",student_id:f.student_id||scopedStudents[0]?.id||"",attendance_date:today(),record_date:today(),note_date:today(),exam_date:today()}));setModal(kind)}
  async function submit(e){e.preventDefault();let op=modal,p={...form};if(op==="attendance")delete p.record_date;if(op==="memorization")delete p.attendance_date;if(op==="note")delete p.attendance_date;if(op==="exam")delete p.student_id;if(op==="exam_result")delete p.class_id;await save(op,p)}
@@ -112,12 +103,12 @@ export default function EducationalRecordsClient({profile}){
  return <main className="records-page" dir="rtl">
   {notice&&<div className="records-toast" role="status">{notice}<button onClick={()=>setNotice("")} aria-label="إغلاق">×</button></div>}
   <header className="records-header"><a href="/dashboard">← لوحة التحكم</a><div><small>منظومة عَون · مسجد التراحم</small><h1>السجل التعليمي</h1><p>إدارة ومتابعة رحلة الطالب التعليمية</p></div><button className="records-export" onClick={exportExcel}>تنزيل Excel</button></header>
-  <section className="records-status"><span className={online?"status-dot":"status-dot is-offline"}></span>{online?"متصل بالإنترنت":"دون اتصال"}<span>·</span>{cached?"البيانات محفوظة على الجهاز":"لم تُحفظ نسخة محلية بعد"}<span>·</span>عمليات معلقة: {pending}<button onClick={()=>{reload();sync()}}>تحديث ومزامنة</button></section>
+  <section className="records-status"><span className="status-dot"></span>البيانات تُحمّل مباشرة من الخادم عبر الإنترنت<button type="button" onClick={reload}>تحديث السجلات</button></section>
   <section className="records-filters"><label>الحلقة<select value={classFilter} onChange={e=>setClassFilter(e.target.value)}><option value="all">كل الحلقات</option>{data.classes.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><label>الطالب<select value={studentFilter} onChange={e=>setStudentFilter(e.target.value)}><option value="all">كل الطلاب</option>{scopedStudents.map(s=><option key={s.id} value={s.id}>{nameOf(s)}</option>)}</select></label><label>من تاريخ<input type="date" value={from} onChange={e=>setFrom(e.target.value)}/></label><label>إلى تاريخ<input type="date" value={to} onChange={e=>setTo(e.target.value)}/></label></section>
   <section className="records-kpis"><article><small>الطلاب</small><strong>{scopedStudents.length}</strong><span>ضمن النطاق المحدد</span></article><article><small>نسبة الحضور</small><strong>{attendanceRate}%</strong><span>{attendance.length} سجل حضور</span></article><article><small>الحفظ والمراجعة</small><strong>{memorization.length}</strong><span>سجل تعليمي</span></article><article><small>متوسط الاختبارات</small><strong>{averageScore}%</strong><span>{resultsFiltered.length} نتيجة مسجلة</span></article><article><small>يحتاجون متابعة</small><strong>{followUpStudents.length}</strong><span>حسب الحضور ومستوى الإتقان</span></article></section>
   <nav className="records-tabs">{[["overview","نظرة عامة"],["attendance","الحضور والغياب"],["memorization","الحفظ والمراجعة"],["exams","الاختبارات والنتائج"],["notes","ملاحظات المعلمين"],["audit","سجل التغييرات"]].map(([k,v])=><button className={tab===k?"active":""} key={k} onClick={()=>setTab(k)}>{v}</button>)}</nav>
   {canWrite&&<div className="records-actions">{[["memorization","+ تسجيل حفظ / مراجعة"],["exam","+ إنشاء اختبار"],["exam_result","+ إضافة نتيجة"],["note","+ إضافة ملاحظة"]].map(([k,v])=><button key={k} onClick={()=>openForm(k)}>{v}</button>)}</div>}
-  {loading?<div className="records-empty">جارٍ تحميل السجلات...</div>:loadError?<div className="records-empty">{loadError}<br/><button type="button" className="records-retry" onClick={reload}>إعادة المحاولة</button></div>:!cached&&!online?<div className="records-empty">لا توجد بيانات محلية بعد. اتصل بالإنترنت مرة واحدة لتحميل بيانات حسابك.</div>:<>
+  {loading?<div className="records-empty">جارٍ تحميل السجلات...</div>:loadError?<div className="records-empty">{loadError}<br/><button type="button" className="records-retry" onClick={reload}>إعادة المحاولة</button></div>:<>
    {tab==="overview"&&<section className="records-panel"><h2>ملخص الأداء التعليمي</h2><div className="records-overview-grid"><div><strong>{attendance.filter(x=>x.status==="present").length}</strong><span>حضور</span></div><div><strong>{attendance.filter(x=>x.status==="absent").length}</strong><span>غياب</span></div><div><strong>{memorization.filter(x=>x.record_type==="new_memorization").length}</strong><span>حفظ جديد</span></div><div><strong>{memorization.filter(x=>x.record_type==="revision").length}</strong><span>مراجعة</span></div></div><h3>آخر السجلات</h3><div className="records-table-wrap"><table><thead><tr><th>التاريخ</th><th>الطالب</th><th>الحلقة</th><th>النوع</th><th>التفاصيل</th></tr></thead><tbody>{[...attendance.map(x=>({...x,_date:x.attendance_date,_type:"حضور",_detail:attendanceLabels[x.status]||x.status})),...memorization.map(x=>({...x,_date:x.record_date,_type:memorizationLabels[x.record_type]||x.record_type,_detail:`سورة ${surahName(x.surah_number)} · الآيات ${x.from_ayah}-${x.to_ayah} · ${ratingLabels[x.verbal_rating]||x.verbal_rating}`})),...notes.map(x=>({...x,_date:x.note_date,_type:"ملاحظة",_detail:x.note}))].sort((a,b)=>(b._date||"").localeCompare(a._date||"")).slice(0,12).map((x,i)=><tr key={x.id||i}><td>{x._date}</td><td>{studentMap[x.student_id]||"—"}</td><td>{classMap[x.class_id]||"—"}</td><td>{x._type}</td><td>{x._detail}</td></tr>)}</tbody></table></div>
     <div className="records-analytics-grid">
      <section className="records-analytics-card"><h3>طلاب يحتاجون إلى متابعة</h3>{followUpStudents.length?<div className="records-analytics-list">{followUpStudents.slice(0,8).map(row=><div key={row.student.id}><strong>{nameOf(row.student)}</strong><span>{row.needsReview?"يحتاج إلى تحسين في الإتقان":`نسبة الغياب ${Math.round(row.absentRate*100)}%`}</span></div>)}</div>:<p className="records-analytics-empty">لا توجد حالات متابعة وفق المؤشرات الحالية.</p>}</section>
@@ -130,7 +121,7 @@ export default function EducationalRecordsClient({profile}){
     {!prepStudents.length?<div className="records-empty">لا يوجد طلاب مسجلون في هذه الحلقة في التاريخ المحدد.</div>:<>
      <div className="records-roster-summary"><span>الحاضرون <strong>{prepStudents.filter(x=>attendanceMarks[x.id]).length}</strong></span><span>الغائبون <strong>{prepStudents.filter(x=>!attendanceMarks[x.id]).length}</strong></span><button type="button" onClick={()=>setAttendanceMarks(Object.fromEntries(prepStudents.map(x=>[x.id,true])))}>تحديد الجميع حاضرًا</button><button type="button" onClick={()=>setAttendanceMarks({})}>إلغاء تحديد الجميع</button></div>
      <div className="records-roster-list"><div className="records-roster-head"><span>م</span><span>اسم الطالب</span><span>حاضر</span></div>{prepStudents.map((student,index)=><label className="records-roster-row" key={student.id}><span>{index+1}</span><strong>{nameOf(student)}</strong><span className="records-present-check"><input type="checkbox" checked={Boolean(attendanceMarks[student.id])} onChange={e=>setAttendanceMarks(current=>({...current,[student.id]:e.target.checked}))}/><b>{attendanceMarks[student.id]?"✓":" "}</b></span></label>)}</div>
-     <button className="records-submit records-roster-save" type="button" disabled={savingSheet||!canWrite} onClick={saveAttendanceSheet}>{savingSheet?"جارٍ حفظ الكشف...":online?"حفظ كشف التحضير":"حفظ الكشف دون إنترنت"}</button>
+     <button className="records-submit records-roster-save" type="button" disabled={savingSheet||!canWrite} onClick={saveAttendanceSheet}>{savingSheet?"جارٍ حفظ الكشف...":"حفظ كشف التحضير"}</button>
     </>}
     <div className="records-table-wrap records-previous-attendance"><h3>السجلات السابقة</h3><table><thead><tr><th>التاريخ</th><th>الطالب</th><th>الحالة</th></tr></thead><tbody>{attendance.length?attendance.slice(0,100).map(row=><tr key={row.id}><td>{row.attendance_date}</td><td>{studentMap[row.student_id]||"—"}</td><td>{attendanceLabels[row.status]||row.status}</td></tr>):<tr><td colSpan="3">لا توجد سجلات ضمن التصفية.</td></tr>}</tbody></table></div>
    </section>}
@@ -148,7 +139,7 @@ export default function EducationalRecordsClient({profile}){
    {modal==="exam"&&<><label>عنوان الاختبار<input required value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/></label><label>تاريخ الاختبار<input type="date" required value={form.exam_date} onChange={e=>setForm({...form,exam_date:e.target.value})}/></label><label>الوصف<textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/></label></>}
    {modal==="exam_result"&&<><label>الاختبار<select required value={form.exam_id} onChange={e=>setForm({...form,exam_id:e.target.value})}><option value="">اختر الاختبار</option>{data.exams.map(x=><option key={x.id} value={x.id}>{x.title} — {classMap[x.class_id]}</option>)}</select></label><label>الدرجة<input type="number" min="0" step="0.01" required value={form.score} onChange={e=>setForm({...form,score:e.target.value})}/></label></>}
    {!["note"].includes(modal)&&modal!=="exam"&&<label>ملاحظات إضافية<textarea value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></label>}
-   <button className="records-submit" type="submit" disabled={savingRecord}>{savingRecord?"جارٍ الحفظ...":online?"حفظ السجل":"حفظ على الجهاز دون إنترنت"}</button></form></div>}
+   <button className="records-submit" type="submit" disabled={savingRecord}>{savingRecord?"جارٍ الحفظ...":"حفظ السجل"}</button></form></div>}
  </main>;
 }
 function RecordsTable({title,rows,cols}){return <section className="records-panel"><h2>{title}</h2><div className="records-table-wrap"><table><thead><tr>{cols.map(c=><th key={c[0]}>{c[1]}</th>)}</tr></thead><tbody>{rows.length?rows.map((r,i)=><tr key={r.id||i}>{cols.map(c=><td key={c[0]}>{c[2]?c[2](r):r[c[0]]??"—"}</td>)}</tr>):<tr><td colSpan={cols.length}>لا توجد سجلات ضمن التصفية الحالية.</td></tr>}</tbody></table></div></section>}
