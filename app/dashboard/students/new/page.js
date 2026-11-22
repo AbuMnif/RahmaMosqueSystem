@@ -15,15 +15,16 @@ export default async function NewStudentPage() {
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("id, full_name, role, is_active")
     .eq("id", user.id)
     .single();
 
   if (
+    profileError ||
     !profile?.is_active ||
-    !["admin", "supervisor"].includes(profile.role)
+    !["admin", "supervisor", "platform_supervisor"].includes(profile.role)
   ) {
     redirect("/dashboard");
   }
