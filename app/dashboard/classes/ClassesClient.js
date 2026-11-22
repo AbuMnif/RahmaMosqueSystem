@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 export default function ClassesClient({ profile }) {
+  const isPlatformSupervisor =
+    profile?.role === "platform_supervisor";
+
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -48,11 +51,15 @@ export default function ClassesClient({ profile }) {
 
     if (!term) return classes;
 
-    return classes.filter((item) =>
-      `${item.name} ${item.description || ""}`
+    return classes.filter((item) => {
+      const teacherNames = (item.teachers || [])
+        .map((assignment) => assignment.teacher?.full_name || "")
+        .join(" ");
+
+      return `${item.name} ${item.description || ""} ${teacherNames}`
         .toLowerCase()
-        .includes(term)
-    );
+        .includes(term);
+    });
   }, [classes, search]);
 
   function resetForm() {
@@ -64,6 +71,8 @@ export default function ClassesClient({ profile }) {
   }
 
   function startEdit(item) {
+    if (isPlatformSupervisor) return;
+
     setEditingId(item.id);
 
     setForm({
@@ -82,6 +91,11 @@ export default function ClassesClient({ profile }) {
 
   async function submitForm(event) {
     event.preventDefault();
+
+    if (isPlatformSupervisor) {
+      setError("حساب مشرف المنصة مخصص للمشاهدة فقط.");
+      return;
+    }
 
     setSaving(true);
     setError("");
@@ -122,6 +136,8 @@ export default function ClassesClient({ profile }) {
   }
 
   async function toggleClass(item) {
+    if (isPlatformSupervisor) return;
+
     const nextState = !item.is_active;
 
     const confirmed = window.confirm(
@@ -171,6 +187,12 @@ export default function ClassesClient({ profile }) {
 
   const inactiveCount = classes.length - activeCount;
 
+  const roleName = {
+    admin: "مدير النظام",
+    supervisor: "مشرف النظام",
+    platform_supervisor: "مشرف المنصة",
+  }[profile?.role] || "مستخدم";
+
   return (
     <main className="classes-page" dir="rtl">
       <header className="classes-header">
@@ -180,9 +202,7 @@ export default function ClassesClient({ profile }) {
 
         <div className="classes-header-user">
           <strong>{profile.full_name}</strong>
-          <span>
-            {profile.role === "admin" ? "مدير النظام" : "المشرف"}
-          </span>
+          <span>{roleName}</span>
         </div>
       </header>
 
@@ -196,11 +216,17 @@ export default function ClassesClient({ profile }) {
             <h1>إدارة الحلقات</h1>
 
             <p>
-              إضافة الحلقات وتنظيم بياناتها ومتابعة أعداد
-              الطلاب والمعلمين المرتبطين بها.
+              عرض الحلقات ومتابعة أعداد الطلاب والمعلمين المرتبطين بها.
             </p>
           </div>
         </div>
+
+        {isPlatformSupervisor && (
+          <div className="classes-notice" role="status">
+            حساب مشرف المنصة مخصص للمشاهدة فقط. يمكنك الاطلاع على
+            بيانات الحلقات والمعلمين دون إضافة أو تعديل أو إيقاف أي حلقة.
+          </div>
+        )}
 
         <section className="classes-summary">
           <article>
@@ -219,89 +245,90 @@ export default function ClassesClient({ profile }) {
           </article>
         </section>
 
-        <section className="classes-form-section">
-          <div className="classes-section-heading">
-            <h2>
-              {editingId ? "تعديل بيانات الحلقة" : "إضافة حلقة جديدة"}
-            </h2>
+        {!isPlatformSupervisor && (
+          <section className="classes-form-section">
+            <div className="classes-section-heading">
+              <h2>
+                {editingId
+                  ? "تعديل بيانات الحلقة"
+                  : "إضافة حلقة جديدة"}
+              </h2>
 
-            {editingId && (
-              <button
-                type="button"
-                className="classes-cancel"
-                onClick={resetForm}
-              >
-                إلغاء التعديل
-              </button>
-            )}
-          </div>
-
-          <form className="classes-form" onSubmit={submitForm}>
-            <label>
-              <span>اسم الحلقة</span>
-
-              <input
-                value={form.name}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    name: event.target.value,
-                  }))
-                }
-                required
-                maxLength={100}
-                placeholder="مثال: حلقة القرآن الكريم"
-              />
-            </label>
-
-            <label>
-              <span>وصف الحلقة</span>
-
-              <textarea
-                value={form.description}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    description: event.target.value,
-                  }))
-                }
-                rows={3}
-                maxLength={500}
-                placeholder="وصف مختصر للحلقة (اختياري)"
-              />
-            </label>
-
-            <div className="classes-form-actions">
-              <button type="submit" disabled={saving}>
-                {saving
-                  ? "جارٍ الحفظ..."
-                  : editingId
-                    ? "حفظ التعديلات"
-                    : "إضافة الحلقة"}
-              </button>
+              {editingId && (
+                <button
+                  type="button"
+                  className="classes-cancel"
+                  onClick={resetForm}
+                >
+                  إلغاء التعديل
+                </button>
+              )}
             </div>
-          </form>
 
-          {notice && (
-            <p className="classes-notice" role="status">
-              {notice}
-            </p>
-          )}
+            <form className="classes-form" onSubmit={submitForm}>
+              <label>
+                <span>اسم الحلقة</span>
 
-          {error && (
-            <p className="classes-error" role="alert">
-              {error}
-            </p>
-          )}
-        </section>
+                <input
+                  value={form.name}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      name: event.target.value,
+                    }))
+                  }
+                  required
+                  maxLength={100}
+                  placeholder="مثال: حلقة القرآن الكريم"
+                />
+              </label>
+
+              <label>
+                <span>وصف الحلقة</span>
+
+                <textarea
+                  value={form.description}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      description: event.target.value,
+                    }))
+                  }
+                  rows={3}
+                  maxLength={500}
+                  placeholder="وصف مختصر للحلقة (اختياري)"
+                />
+              </label>
+
+              <div className="classes-form-actions">
+                <button type="submit" disabled={saving}>
+                  {saving
+                    ? "جارٍ الحفظ..."
+                    : editingId
+                      ? "حفظ التعديلات"
+                      : "إضافة الحلقة"}
+                </button>
+              </div>
+            </form>
+          </section>
+        )}
+
+        {(notice || error) && (
+          <div
+            className={error ? "classes-error" : "classes-notice"}
+            role={error ? "alert" : "status"}
+          >
+            {error || notice}
+          </div>
+        )}
 
         <section className="classes-list-section">
           <div className="classes-list-heading">
             <div>
               <h2>الحلقات المسجلة</h2>
+
               <p>
-                يمكن تعديل اسم الحلقة ووصفها. إدارة المعلمين
-                وتوزيع الأيام ستكون في المرحلة التالية.
+                يمكنك البحث باسم الحلقة أو وصفها أو اسم المعلم.
               </p>
             </div>
 
@@ -319,7 +346,7 @@ export default function ClassesClient({ profile }) {
             className="classes-search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="ابحث باسم الحلقة أو وصفها..."
+            placeholder="ابحث باسم الحلقة أو وصفها أو المعلم..."
             aria-label="البحث عن حلقة"
           />
 
@@ -327,11 +354,15 @@ export default function ClassesClient({ profile }) {
             <div className="classes-empty">
               جارٍ تحميل الحلقات...
             </div>
+          ) : error && classes.length === 0 ? (
+            <div className="classes-empty">
+              تعذر تحميل بيانات الحلقات.
+            </div>
           ) : filteredClasses.length === 0 ? (
             <div className="classes-empty">
               {search
                 ? "لا توجد نتائج مطابقة للبحث."
-                : "لا توجد حلقات مسجلة حتى الآن. أضف أول حلقة من النموذج أعلاه."}
+                : "لا توجد حلقات مسجلة حتى الآن."}
             </div>
           ) : (
             <div className="classes-table-wrap">
@@ -342,7 +373,10 @@ export default function ClassesClient({ profile }) {
                     <th>عدد الطلاب</th>
                     <th>المعلمون</th>
                     <th>الحالة</th>
-                    <th>الإجراءات</th>
+
+                    {!isPlatformSupervisor && (
+                      <th>الإجراءات</th>
+                    )}
                   </tr>
                 </thead>
 
@@ -357,7 +391,7 @@ export default function ClassesClient({ profile }) {
                         )}
                       </td>
 
-                      <td>{item.student_count}</td>
+                      <td>{item.student_count ?? 0}</td>
 
                       <td>
                         {item.teachers?.length
@@ -383,25 +417,27 @@ export default function ClassesClient({ profile }) {
                         </span>
                       </td>
 
-                      <td>
-                        <div className="classes-row-actions">
-                          <button
-                            type="button"
-                            className="classes-edit"
-                            onClick={() => startEdit(item)}
-                          >
-                            تعديل
-                          </button>
+                      {!isPlatformSupervisor && (
+                        <td>
+                          <div className="classes-row-actions">
+                            <button
+                              type="button"
+                              className="classes-edit"
+                              onClick={() => startEdit(item)}
+                            >
+                              تعديل
+                            </button>
 
-                          <button
-                            type="button"
-                            className="classes-toggle"
-                            onClick={() => toggleClass(item)}
-                          >
-                            {item.is_active ? "إيقاف" : "تفعيل"}
-                          </button>
-                        </div>
-                      </td>
+                            <button
+                              type="button"
+                              className="classes-toggle"
+                              onClick={() => toggleClass(item)}
+                            >
+                              {item.is_active ? "إيقاف" : "تفعيل"}
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
