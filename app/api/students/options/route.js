@@ -10,9 +10,10 @@ export async function GET() {
 
     const {
       data: { user },
+      error: authError,
     } = await supabase.auth.getUser();
 
-    if (!user) {
+    if (authError || !user) {
       return NextResponse.json(
         { error: "يجب تسجيل الدخول." },
         { status: 401 }
@@ -21,15 +22,16 @@ export async function GET() {
 
     const admin = createSupabaseAdmin();
 
-    const { data: profile } = await admin
+    const { data: profile, error: profileError } = await admin
       .from("profiles")
       .select("role, is_active")
       .eq("id", user.id)
       .maybeSingle();
 
     if (
+      profileError ||
       !profile?.is_active ||
-      !["admin", "supervisor"].includes(profile.role)
+      !["admin", "supervisor", "platform_supervisor"].includes(profile.role)
     ) {
       return NextResponse.json(
         { error: "ليس لديك صلاحية." },
