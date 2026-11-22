@@ -48,7 +48,7 @@ export default function LoginPage() {
   return (
     <main className="login-page" dir="rtl">
       <section className="login-card">
-        <h1>منظومة رحَمة الإدارية</h1>
+        <h1>منظومة عَون الإدارية</h1>
         <p>مسجد التراحم</p>
 
         <form onSubmit={handleLogin}>

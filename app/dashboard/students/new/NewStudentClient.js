@@ -265,7 +265,7 @@ export default function NewStudentClient({ profile }) {
         {!receipt ? (
           <>
             <div className="new-student-heading no-print">
-              <span>منظومة رحَمة الإدارية</span>
+              <span>منظومة عَون الإدارية</span>
               <h1>تسجيل طالب جديد</h1>
               <p>
                 أدخل بيانات الطالب وولي الأمر والحلقة لإتمام التسجيل.
@@ -487,7 +487,7 @@ export default function NewStudentClient({ profile }) {
 
                 <div>
                   <h1>مسجد التراحم</h1>
-                  <p>منظومة رحَمة الإدارية</p>
+                  <p>منظومة عَون الإدارية</p>
                   <strong>بطاقة تسجيل طالب</strong>
                 </div>
 
@@ -576,7 +576,7 @@ export default function NewStudentClient({ profile }) {
               </section>
 
               <section className="registration-platform-description">
-                <h2>عن منظومة رحَمة الإدارية</h2>
+                <h2>عن منظومة عَون الإدارية</h2>
                 <p>
                   تتيح المنظومة لولي الأمر متابعة أبنائه والاطلاع على
                   الحضور والغياب، والحفظ الجديد والمراجعة، ونتائج
@@ -600,7 +600,7 @@ export default function NewStudentClient({ profile }) {
               </div>
 
               <div className="registration-card-footer">
-                منظومة رحَمة الإدارية — مسجد التراحم
+                منظومة عَون الإدارية — مسجد التراحم
               </div>
             </article>
 

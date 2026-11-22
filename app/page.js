@@ -44,14 +44,14 @@ export default function HomePage() {
             />
             <span>
               <strong>مسجد التراحم</strong>
-              <small>منظومة رحَمة الإدارية</small>
+              <small>منظومة عَون الإدارية</small>
             </span>
           </Link>
 
           <nav className="public-nav">
             <a href="#home">الرئيسية</a>
             <a href="#about">عن المسجد</a>
-            <a href="#rahma">منظومة رحَمة</a>
+            <a href="#awn">منظومة عَون</a>
             <a href="#programs">برامجنا</a>
             <a href="#contact">تواصل معنا</a>
           </nav>
@@ -70,7 +70,7 @@ export default function HomePage() {
             <h1>
               بالقرآن نرتقي،
               <br />
-              وبالتراحم <span>نبني الأجيال</span>
+              وبالعون <span>نبني الأجيال</span>
             </h1>
 
             <p>
@@ -87,7 +87,7 @@ export default function HomePage() {
 
             <div className="hero-note">
               <span className="note-line" />
-              تعليم · تربية · تحفيظ · تراحم
+              تعليم · تربية · تحفيظ · عَون
             </div>
           </div>
         </div>
@@ -120,16 +120,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="rahma-section" id="rahma">
+      <section className="rahma-section" id="awn">
         <div className="public-container">
           <div className="rahma-heading">
-            <span>رحَمة الإدارية</span>
-            <h2>ما هي منظومة رحَمة؟</h2>
+            <span>منظومة عَون الإدارية</span>
+            <h2>ما هي منظومة عَون؟</h2>
             <p>
-              منظومة رحَمة الإدارية هي منظومة رقمية تابعة
-              لمسجد التراحم، استمدت اسمها من اسم المسجد،
-              وجاءت لتكون امتدادًا لرسالته التعليمية والتربوية
-              في صورة تقنية متكاملة.
+              منظومة عَون الإدارية هي منظومة رقمية أُنشئت
+              من قبل مسجد التراحم لتوحيد أعماله التعليمية
+              والإدارية في بيئة تقنية واحدة. ويعبّر اسم عَون
+              عن المساندة والتكامل وتيسير العمل، من خلال
+              ربط الإدارة والمعلمين وأولياء الأمور ومتابعة
+              رحلة الطالب التعليمية في حلقات القرآن الكريم.
             </p>
           </div>
 
@@ -193,9 +195,9 @@ export default function HomePage() {
           </div>
 
           <div className="rahma-quote">
-            <span>رحَمة</span>
+            <span>عَون</span>
             <p>
-              تقنية تخدم التعليم، وتنظم العمل، وتعزز التواصل.
+              عَون؛ تقنية تجمع الجهود، وتيسّر التعليم، وتساند رحلة الطالب.
             </p>
           </div>
         </div>
@@ -233,7 +235,7 @@ export default function HomePage() {
       <section className="join-section">
         <div className="public-container join-content">
           <div>
-            <span className="join-label">منظومة رحَمة الإدارية</span>
+            <span className="join-label">منظومة عَون الإدارية</span>
             <h2>رحلتنا التعليمية مستمرة</h2>
             <p>
               بوابة موحدة للإدارة والمعلمين وأولياء الأمور
@@ -259,7 +261,7 @@ export default function HomePage() {
 
             <div>
               <strong>مسجد التراحم</strong>
-              <span>منظومة رحَمة الإدارية</span>
+              <span>منظومة عَون الإدارية</span>
             </div>
           </div>
 

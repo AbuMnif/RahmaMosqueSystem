@@ -1,9 +1,23 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "منظومة رحَمة الإدارية | مسجد التراحم",
+  title: "منظومة عَون الإدارية | مسجد التراحم",
   description:
-    "نظام إدارة حلقات تحفيظ القرآن الكريم في مسجد التراحم",
+    "منظومة رقمية أُنشئت من قبل مسجد التراحم لتوحيد الأعمال التعليمية والإدارية، ومساندة الطلاب والمعلمين وأولياء الأمور.",
+  applicationName: "عَون",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "عَون",
+  },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#174C35",
+  colorScheme: "light",
 };
 
 export default function RootLayout({ children }) {

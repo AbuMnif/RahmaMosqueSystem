@@ -94,7 +94,7 @@ export default function DashboardClient({ profile }) {
           />
 
           <span>
-            <strong>منظومة رحَمة</strong>
+            <strong>منظومة عَون</strong>
             <small>مسجد التراحم</small>
           </span>
         </a>
@@ -133,7 +133,7 @@ export default function DashboardClient({ profile }) {
             </h1>
 
             <p>
-              نسعد بوجودك في منظومة رحَمة الإدارية.
+              نسعد بوجودك في منظومة عَون الإدارية.
               اختر القسم الذي تريد الاطلاع عليه.
             </p>
 
@@ -203,7 +203,7 @@ export default function DashboardClient({ profile }) {
         </section>
 
         <footer className="dashboard-footer">
-          منظومة رحَمة الإدارية - مسجد التراحم
+          منظومة عَون الإدارية - مسجد التراحم
         </footer>
       </div>
     </main>

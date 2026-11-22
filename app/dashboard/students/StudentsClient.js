@@ -181,7 +181,7 @@ export default function StudentsClient({ profile }) {
         <section className="students-heading">
           <div>
             <span className="students-eyebrow">
-              منظومة رحَمة الإدارية
+              منظومة عَون الإدارية
             </span>
 
             <h1>إدارة الطلاب</h1>
@@ -370,7 +370,7 @@ export default function StudentsClient({ profile }) {
         </section>
 
         <footer className="students-footer">
-          منظومة رحَمة الإدارية - مسجد التراحم
+          منظومة عَون الإدارية - مسجد التراحم
         </footer>
       </div>
     </main>
