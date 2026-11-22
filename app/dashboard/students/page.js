@@ -25,7 +25,7 @@ export default async function StudentsPage() {
     profileError ||
     !profile ||
     !profile.is_active ||
-    !["admin", "supervisor"].includes(profile.role)
+    !["admin", "supervisor", "platform_supervisor"].includes(profile.role)
   ) {
     redirect("/dashboard");
   }
