@@ -178,8 +178,10 @@ export async function POST(request) {
       const classId = String(body.class_id || "");
       const teacherId = String(body.teacher_id || "");
       const teachingDays = Array.isArray(body.teaching_days) ? [...new Set(body.teaching_days.map(String))] : [];
-      const validDays = ["السبت", "الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
-      if (!classId || !teacherId || !teachingDays.length || teachingDays.some(day => !validDays.includes(day))) {
+      const dayMap = {"السبت":"saturday","الأحد":"sunday","الإثنين":"monday","الثلاثاء":"tuesday","الأربعاء":"wednesday","الخميس":"thursday","الجمعة":"friday"};
+      const validDays = ["saturday","sunday","monday","tuesday","wednesday","thursday","friday"];
+      const normalizedDays = teachingDays.map(day => dayMap[day] || day);
+      if (!classId || !teacherId || !normalizedDays.length || normalizedDays.some(day => !validDays.includes(day))) {
         return NextResponse.json({ error: "اختر الحلقة والمعلم ويوم تدريس واحدًا على الأقل." }, { status: 400 });
       }
       const { admin } = manager;
@@ -191,7 +193,7 @@ export async function POST(request) {
       const { data: existing, error: existingError } = await admin.from("class_teachers").select("id").eq("class_id", classId).eq("teacher_id", teacherId).maybeSingle();
       if (existingError) throw existingError;
       if (existing) return NextResponse.json({ error: "هذا المعلم مسند إلى الحلقة بالفعل. يمكنك تعديل أيامه." }, { status: 409 });
-      const { data, error } = await admin.from("class_teachers").insert({ class_id: classId, teacher_id: teacherId, teaching_days: teachingDays }).select("id, class_id, teacher_id, teaching_days").single();
+      const { data, error } = await admin.from("class_teachers").insert({ class_id: classId, teacher_id: teacherId, teaching_days: normalizedDays }).select("id, class_id, teacher_id, teaching_days").single();
       if (error) throw error;
       return NextResponse.json({ success: true, assignment: { ...data, teacher } }, { status: 201 });
     }
@@ -272,9 +274,11 @@ export async function PATCH(request) {
     if (body.action === "update_assignment") {
       const assignmentId = String(body.assignment_id || "");
       const teachingDays = Array.isArray(body.teaching_days) ? [...new Set(body.teaching_days.map(String))] : [];
-      const validDays = ["السبت", "الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
-      if (!assignmentId || !teachingDays.length || teachingDays.some(day => !validDays.includes(day))) return NextResponse.json({ error: "حدد أيام تدريس صحيحة." }, { status: 400 });
-      const { data, error } = await manager.admin.from("class_teachers").update({ teaching_days: teachingDays }).eq("id", assignmentId).select("id, class_id, teacher_id, teaching_days").maybeSingle();
+      const dayMap = {"السبت":"saturday","الأحد":"sunday","الإثنين":"monday","الثلاثاء":"tuesday","الأربعاء":"wednesday","الخميس":"thursday","الجمعة":"friday"};
+      const validDays = ["saturday","sunday","monday","tuesday","wednesday","thursday","friday"];
+      const normalizedDays = teachingDays.map(day => dayMap[day] || day);
+      if (!assignmentId || !normalizedDays.length || normalizedDays.some(day => !validDays.includes(day))) return NextResponse.json({ error: "حدد أيام تدريس صحيحة." }, { status: 400 });
+      const { data, error } = await manager.admin.from("class_teachers").update({ teaching_days: normalizedDays }).eq("id", assignmentId).select("id, class_id, teacher_id, teaching_days").maybeSingle();
       if (error) throw error;
       if (!data) return NextResponse.json({ error: "الإسناد غير موجود." }, { status: 404 });
       return NextResponse.json({ success: true, assignment: data });

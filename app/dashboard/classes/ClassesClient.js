@@ -187,7 +187,12 @@ export default function ClassesClient({ profile }) {
   }
 
 
-  const weekDays = ["السبت", "الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
+  const weekDays = [
+    ["saturday", "السبت"], ["sunday", "الأحد"], ["monday", "الإثنين"],
+    ["tuesday", "الثلاثاء"], ["wednesday", "الأربعاء"],
+    ["thursday", "الخميس"], ["friday", "الجمعة"],
+  ];
+  const dayLabels = Object.fromEntries(weekDays);
 
   function openAssignment(item, assignment = null) {
     if (isPlatformSupervisor) return;
@@ -469,7 +474,7 @@ export default function ClassesClient({ profile }) {
                                 <small>
                                   <b>أيام التدريس:</b>{" "}
                                   {Array.isArray(assignment.teaching_days) && assignment.teaching_days.length
-                                    ? assignment.teaching_days.join("، ")
+                                    ? assignment.teaching_days.map(day => dayLabels[day] || day).join("، ")
                                     : "لم تحدد أيام التدريس"}
                                 </small>
                                 {!isPlatformSupervisor && <div className="classes-assignment-actions">
@@ -541,7 +546,7 @@ export default function ClassesClient({ profile }) {
             </select>
           </label>}
           <fieldset className="classes-days-fieldset"><legend>أيام التدريس</legend><div className="classes-days-grid">
-            {weekDays.map(day => <label key={day} className={assignmentForm.teaching_days.includes(day) ? "selected" : ""}><input type="checkbox" checked={assignmentForm.teaching_days.includes(day)} onChange={() => toggleTeachingDay(day)} />{day}</label>)}
+            {weekDays.map(([value, label]) => <label key={value} className={assignmentForm.teaching_days.includes(value) ? "selected" : ""}><input type="checkbox" checked={assignmentForm.teaching_days.includes(value)} onChange={() => toggleTeachingDay(value)} />{label}</label>)}
           </div></fieldset>
           {teachers.filter(teacher => teacher.is_active).length === 0 && !assignmentModal.assignmentId && <p className="classes-inline-warning">لا توجد حسابات معلمين نشطة. أنشئ حساب معلم أولًا من إدارة الحسابات.</p>}
           <button className="classes-assignment-submit" type="submit" disabled={assignmentSaving || (!assignmentModal.assignmentId && !teachers.some(teacher => teacher.is_active))}>{assignmentSaving ? "جارٍ الحفظ..." : "حفظ الإسناد"}</button>

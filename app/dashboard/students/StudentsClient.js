@@ -355,10 +355,10 @@ export default function StudentsClient({ profile }) {
 
                       <td>
                         <a
-                          href={`/dashboard/students/${student.id}`}
+                          href={`/dashboard/educational-records?student=${encodeURIComponent(student.id)}`}
                           className="students-details-link"
                         >
-                          عرض الملف
+                          السجل التعليمي
                         </a>
                       </td>
                     </tr>
