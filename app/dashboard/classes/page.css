@@ -459,3 +459,28 @@
     align-items: flex-start;
   }
 }
+
+/* Teacher assignment controls */
+.classes-assign,.classes-assignment-submit{border:0;border-radius:9px;background:#174c35;color:#fff;padding:9px 12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.classes-assignment-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.classes-assignment-actions button{border:1px solid #dce7d8;border-radius:7px;background:#f5f8f2;color:#174c35;padding:6px 9px;font:inherit;font-size:11px;cursor:pointer}
+.classes-assignment-actions button:last-child{color:#9b3c32;border-color:#efd8d4;background:#fff8f6}
+.classes-modal-backdrop{position:fixed;inset:0;z-index:1500;display:grid;place-items:center;padding:18px;background:#10251dcc;overflow:auto}
+.classes-assignment-modal{position:relative;width:min(480px,100%);max-height:92dvh;overflow:auto;display:flex;flex-direction:column;gap:15px;padding:28px;border:1px solid #e5ebe2;border-radius:18px;background:#fff;box-shadow:0 22px 70px #10251d40}
+.classes-assignment-modal h2{margin:0;color:#174c35;font-size:22px}
+.classes-modal-class{margin:-8px 0 2px;color:#68756c;font-size:13px}
+.classes-modal-close{position:absolute;top:12px;left:14px;border:0;background:transparent;color:#68756c;font-size:27px;cursor:pointer}
+.classes-modal-label{display:flex;flex-direction:column;gap:7px;color:#455349;font-size:13px;font-weight:700}
+.classes-modal-label select{width:100%;min-height:44px;padding:10px;border:1px solid #dce5dc;border-radius:9px;background:#fff;color:#202820;font:inherit}
+.classes-days-fieldset{margin:0;padding:14px;border:1px solid #e2e9df;border-radius:12px}
+.classes-days-fieldset legend{padding:0 7px;color:#455349;font-size:13px;font-weight:700}
+.classes-days-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.classes-days-grid label{display:flex;align-items:center;gap:8px;min-height:42px;padding:8px 10px;border:1px solid #e3eae0;border-radius:9px;background:#f9fbf8;color:#455349;font-size:12px;cursor:pointer}
+.classes-days-grid label.selected{border-color:#8dbb80;background:#eff7eb;color:#174c35}
+.classes-days-grid input{accent-color:#174c35;width:16px;height:16px}
+.classes-assignment-submit{min-height:46px;font-size:14px}
+.classes-assignment-submit:disabled{opacity:.5;cursor:not-allowed}
+.classes-inline-warning{margin:0;padding:10px;border-radius:9px;background:#fff6e6;color:#805514;font-size:12px;line-height:1.7}
+@media(max-width:560px){.classes-assignment-modal{padding:23px 17px}.classes-days-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.classes-assignment-actions button{min-height:34px}}
+.classes-add-teacher-link{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 14px;border:1px solid #cfe0ca;border-radius:10px;background:#edf6ea;color:#174c35;text-decoration:none;font-size:12px;font-weight:800;white-space:nowrap}
+@media(max-width:620px){.classes-heading{align-items:flex-start;flex-direction:column;gap:12px}.classes-add-teacher-link{width:100%}}

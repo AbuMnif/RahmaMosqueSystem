@@ -1,13 +1,16 @@
-Awn v1.1.3
+منظومة عَون الإدارية — الإصدار Awn-v1.1.4
 
-This release adds the educational records area, attendance, memorization/review, exams and results, teacher notes, Excel workbook export, audit-log viewing, local IndexedDB snapshots, offline operation queue with automatic retry, offline status banner, service-worker caching, and 30-day Supabase SSR cookie persistence.
+إصلاحات هذا الإصدار:
+- منع إشعار تنزيل البيانات من التكرار عند التنقل بين الصفحات؛ يظهر فقط عند إنشاء النسخة المحلية لأول مرة.
+- إزالة إشعار التحميل المتكرر من صفحة السجل التعليمي.
+- إصلاح Service Worker: لم يعد يستبدل أي صفحة بصفحة السجل التعليمي عند انقطاع الإنترنت؛ يعرض الصفحة المخزنة المطابقة أو صفحة توضيحية عند عدم توفرها.
+- تفعيل رابط السجل التعليمي في لوحة التحكم للأدوار التي يظهر لها القسم.
+- إضافة إسناد المعلمين للحلقات، وتحديد أيام التدريس، وتعديل الأيام وإلغاء الإسناد.
+- إظهار رسالة واضحة للحسابات المعطلة عند محاولة تسجيل الدخول.
+- إعادة تنسيق السجل التعليمي بواجهة متجاوبة للجوال والحاسوب، مع معالجة تداخل الجداول والحقول والنوافذ.
 
-Deployment:
-1. Upload this archive to the repository root.
-2. Update the replacement workflow archive name to Awn-v1.1.3.zip.
-3. Run the GitHub Actions workflow.
-
-Important:
-- No SQL migrations are included; the implementation uses the provided existing tables/columns.
-- Offline edits are stored in the browser on the current device and queued for sync. The teacher must first sign in online and allow data to download.
-- Test on a staging deployment before using with live student records.
+ملاحظات تشغيل:
+- يحتاج المعلم إلى تسجيل الدخول والاتصال بالإنترنت أول مرة لتحميل بياناته.
+- الصفحات التي يراد فتحها دون اتصال يجب زيارتها مرة واحدة أثناء الاتصال ليحفظها المتصفح.
+- لا يحذف هذا الإصدار أي جدول أو بيانات من Supabase.
+- لم يتم اختبار اتصال Supabase الفعلي أو بناء Vercel من هذه البيئة؛ راجع نتيجة Actions وVercel بعد النشر.

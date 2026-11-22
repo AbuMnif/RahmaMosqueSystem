@@ -26,10 +26,17 @@ export async function POST(request) {
       .ilike("username", username.trim())
       .maybeSingle();
 
-    if (profileError || !profile || !profile.is_active) {
+    if (profileError || !profile) {
       return NextResponse.json(
         { error: "اسم المستخدم أو كلمة المرور غير صحيحة" },
         { status: 401 }
+      );
+    }
+
+    if (!profile.is_active) {
+      return NextResponse.json(
+        { error: "تم تعطيل حسابك، يرجى التواصل مع إدارة المسجد." },
+        { status: 403 }
       );
     }
 

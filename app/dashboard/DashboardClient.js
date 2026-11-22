@@ -52,6 +52,8 @@ const moduleLinks = {
   "إدارة الطلاب": "/dashboard/students",
   "متابعة الطلاب": "/dashboard/students",
   "الحلقات والمعلمون": "/dashboard/classes",
+  "السجلات التعليمية": "/dashboard/educational-records",
+  "السجل التعليمي": "/dashboard/educational-records",
   "إدارة الحسابات": "/dashboard/accounts",
 };
 

@@ -1,5 +1,60 @@
 "use client";
-import {useEffect,useState} from "react";
-const DB="awn-educational-v1",STORE="records";
-function saveSnapshot(key,value){return new Promise((resolve,reject)=>{const open=indexedDB.open(DB,1);open.onupgradeneeded=()=>{if(!open.result.objectStoreNames.contains(STORE))open.result.createObjectStore(STORE)};open.onerror=()=>reject(open.error);open.onsuccess=()=>{const tx=open.result.transaction(STORE,"readwrite");tx.objectStore(STORE).put(value,key);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error)}})}
-export default function DataPreloader(){const [message,setMessage]=useState("");useEffect(()=>{let alive=true;(async()=>{try{const r=await fetch("/api/educational-records",{cache:"no-store"});if(!r.ok)return;const j=await r.json();if(!j.success||!j.data?.profile?.id)return;await saveSnapshot(`snapshot:${j.data.profile.id}`,j.data);if(!alive)return;setMessage("تم تحميل بياناتك وحفظها على الجهاز. يمكنك الآن العمل دون اتصال.");if("serviceWorker" in navigator){const reg=await navigator.serviceWorker.ready;reg.active?.postMessage({type:"CACHE_URL",url:"/dashboard/educational-records"})}setTimeout(()=>alive&&setMessage(""),6500)}catch{}})();return()=>{alive=false}},[]);return message?<div role="status" style={{position:"fixed",bottom:16,left:16,right:16,zIndex:1001,maxWidth:650,margin:"auto",padding:"12px 16px",borderRadius:12,background:"#e9f5e6",border:"1px solid #cde3c7",color:"#174c35",fontSize:13,textAlign:"center",boxShadow:"0 6px 24px #174c3520"}}>{message}</div>:null}
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+
+const DB = "awn-educational-v1";
+const STORE = "records";
+function dbGet(key) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB, 1);
+    request.onupgradeneeded = () => { if (!request.result.objectStoreNames.contains(STORE)) request.result.createObjectStore(STORE); };
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const tx = request.result.transaction(STORE, "readonly");
+      const get = tx.objectStore(STORE).get(key);
+      get.onsuccess = () => resolve(get.result);
+      get.onerror = () => reject(get.error);
+    };
+  });
+}
+function dbSet(key, value) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB, 1);
+    request.onupgradeneeded = () => { if (!request.result.objectStoreNames.contains(STORE)) request.result.createObjectStore(STORE); };
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const tx = request.result.transaction(STORE, "readwrite");
+      tx.objectStore(STORE).put(value, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    };
+  });
+}
+export default function DataPreloader() {
+  const pathname = usePathname();
+  const [message, setMessage] = useState("");
+  useEffect(() => {
+    if (pathname !== "/dashboard" || !navigator.onLine) return;
+    let alive = true;
+    let timer;
+    (async () => {
+      try {
+        const response = await fetch("/api/educational-records", { cache: "no-store" });
+        if (!response.ok) return;
+        const result = await response.json();
+        const snapshot = result?.data;
+        if (!result.success || !snapshot?.profile?.id) return;
+        const key = `snapshot:${snapshot.profile.id}`;
+        const previous = await dbGet(key);
+        await dbSet(key, snapshot);
+        if (!alive) return;
+        if (!previous) {
+          setMessage("تم تجهيز بياناتك للعمل دون اتصال بالإنترنت.");
+          timer = setTimeout(() => alive && setMessage(""), 4200);
+        }
+      } catch { /* يعمل التطبيق دون إزعاج المستخدم عند تعذر التحميل */ }
+    })();
+    return () => { alive = false; clearTimeout(timer); };
+  }, [pathname]);
+  return message ? <div role="status" className="awn-preload-toast">{message}</div> : null;
+}

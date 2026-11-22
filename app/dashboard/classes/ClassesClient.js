@@ -7,6 +7,10 @@ export default function ClassesClient({ profile }) {
     profile?.role === "platform_supervisor";
 
   const [classes, setClasses] = useState([]);
+  const [teachers, setTeachers] = useState([]);
+  const [assignmentModal, setAssignmentModal] = useState(null);
+  const [assignmentForm, setAssignmentForm] = useState({ teacher_id: "", teaching_days: [] });
+  const [assignmentSaving, setAssignmentSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -35,6 +39,7 @@ export default function ClassesClient({ profile }) {
       }
 
       setClasses(result.classes || []);
+      setTeachers(result.teachers || []);
     } catch (err) {
       setError(err.message || "حدث خطأ أثناء تحميل الحلقات.");
     } finally {
@@ -181,6 +186,66 @@ export default function ClassesClient({ profile }) {
     }
   }
 
+
+  const weekDays = ["السبت", "الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
+
+  function openAssignment(item, assignment = null) {
+    if (isPlatformSupervisor) return;
+    setAssignmentModal({ classId: item.id, className: item.name, assignmentId: assignment?.id || null });
+    setAssignmentForm({ teacher_id: assignment?.teacher_id || "", teaching_days: assignment?.teaching_days || [] });
+    setError("");
+    setNotice("");
+  }
+
+  function toggleTeachingDay(day) {
+    setAssignmentForm(current => ({
+      ...current,
+      teaching_days: current.teaching_days.includes(day)
+        ? current.teaching_days.filter(value => value !== day)
+        : [...current.teaching_days, day],
+    }));
+  }
+
+  async function submitAssignment(event) {
+    event.preventDefault();
+    if (!assignmentModal) return;
+    setAssignmentSaving(true);
+    setError("");
+    setNotice("");
+    try {
+      const editing = Boolean(assignmentModal.assignmentId);
+      const response = await fetch("/api/classes", {
+        method: editing ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editing
+          ? { action: "update_assignment", assignment_id: assignmentModal.assignmentId, teaching_days: assignmentForm.teaching_days }
+          : { action: "assign_teacher", class_id: assignmentModal.classId, teacher_id: assignmentForm.teacher_id, teaching_days: assignmentForm.teaching_days }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "تعذر حفظ إسناد المعلم.");
+      setAssignmentModal(null);
+      setNotice(editing ? "تم تحديث إسناد المعلم وأيام التدريس." : "تم إسناد المعلم إلى الحلقة بنجاح.");
+      await loadClasses();
+    } catch (err) {
+      setError(err.message || "حدث خطأ أثناء حفظ الإسناد.");
+    } finally {
+      setAssignmentSaving(false);
+    }
+  }
+
+  async function removeAssignment(assignment) {
+    if (!window.confirm("هل تريد إلغاء إسناد هذا المعلم من الحلقة؟")) return;
+    try {
+      const response = await fetch(`/api/classes?assignment_id=${encodeURIComponent(assignment.id)}`, { method: "DELETE" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "تعذر إلغاء الإسناد.");
+      setNotice("تم إلغاء إسناد المعلم.");
+      await loadClasses();
+    } catch (err) {
+      setError(err.message || "حدث خطأ أثناء إلغاء الإسناد.");
+    }
+  }
+
   const activeCount = classes.filter(
     (item) => item.is_active
   ).length;
@@ -216,9 +281,10 @@ export default function ClassesClient({ profile }) {
             <h1>إدارة الحلقات</h1>
 
             <p>
-              عرض الحلقات ومتابعة أعداد الطلاب والمعلمين المرتبطين بها.
+              عرض الحلقات وإدارة المعلمين وإسنادهم وتحديد أيام التدريس.
             </p>
           </div>
+          {profile?.role === "admin" && <a className="classes-add-teacher-link" href="/dashboard/accounts?role=teacher">+ إنشاء حساب معلم</a>}
         </div>
 
         {isPlatformSupervisor && (
@@ -406,6 +472,10 @@ export default function ClassesClient({ profile }) {
                                     ? assignment.teaching_days.join("، ")
                                     : "لم تحدد أيام التدريس"}
                                 </small>
+                                {!isPlatformSupervisor && <div className="classes-assignment-actions">
+                                  <button type="button" onClick={() => openAssignment(item, assignment)}>تعديل الأيام</button>
+                                  <button type="button" onClick={() => removeAssignment(assignment)}>إلغاء الإسناد</button>
+                                </div>}
                               </div>
                             ))}
                           </div>
@@ -429,6 +499,9 @@ export default function ClassesClient({ profile }) {
                       {!isPlatformSupervisor && (
                         <td>
                           <div className="classes-row-actions">
+                            <button type="button" className="classes-assign" onClick={() => openAssignment(item)}>
+                              + إسناد معلم
+                            </button>
                             <button
                               type="button"
                               className="classes-edit"
@@ -455,6 +528,25 @@ export default function ClassesClient({ profile }) {
           )}
         </section>
       </div>
+      {assignmentModal && <div className="classes-modal-backdrop" onClick={() => setAssignmentModal(null)}>
+        <form className="classes-assignment-modal" onSubmit={submitAssignment} onClick={event => event.stopPropagation()}>
+          <button type="button" className="classes-modal-close" onClick={() => setAssignmentModal(null)}>×</button>
+          <span className="classes-eyebrow">إدارة الإسناد</span>
+          <h2>{assignmentModal.assignmentId ? "تعديل أيام التدريس" : "إسناد معلم للحلقة"}</h2>
+          <p className="classes-modal-class">{assignmentModal.className}</p>
+          {!assignmentModal.assignmentId && <label className="classes-modal-label">المعلم
+            <select required value={assignmentForm.teacher_id} onChange={event => setAssignmentForm(current => ({ ...current, teacher_id: event.target.value }))}>
+              <option value="">اختر المعلم</option>
+              {teachers.filter(teacher => teacher.is_active).map(teacher => <option key={teacher.id} value={teacher.id}>{teacher.full_name}</option>)}
+            </select>
+          </label>}
+          <fieldset className="classes-days-fieldset"><legend>أيام التدريس</legend><div className="classes-days-grid">
+            {weekDays.map(day => <label key={day} className={assignmentForm.teaching_days.includes(day) ? "selected" : ""}><input type="checkbox" checked={assignmentForm.teaching_days.includes(day)} onChange={() => toggleTeachingDay(day)} />{day}</label>)}
+          </div></fieldset>
+          {teachers.filter(teacher => teacher.is_active).length === 0 && !assignmentModal.assignmentId && <p className="classes-inline-warning">لا توجد حسابات معلمين نشطة. أنشئ حساب معلم أولًا من إدارة الحسابات.</p>}
+          <button className="classes-assignment-submit" type="submit" disabled={assignmentSaving || (!assignmentModal.assignmentId && !teachers.some(teacher => teacher.is_active))}>{assignmentSaving ? "جارٍ الحفظ..." : "حفظ الإسناد"}</button>
+        </form>
+      </div>}
     </main>
   );
 }

@@ -124,9 +124,17 @@ export async function GET() {
       };
     });
 
+    const { data: teacherProfiles, error: teacherProfilesError } = await admin
+      .from("profiles")
+      .select("id, full_name, username, is_active")
+      .eq("role", "teacher")
+      .order("full_name", { ascending: true });
+    if (teacherProfilesError) throw teacherProfilesError;
+
     return NextResponse.json({
       success: true,
       classes: formatted,
+      teachers: teacherProfiles || [],
     });
   } catch (error) {
     console.error("GET classes error:", error);
@@ -165,6 +173,28 @@ export async function POST(request) {
     }
 
     const body = await request.json();
+
+    if (body.action === "assign_teacher") {
+      const classId = String(body.class_id || "");
+      const teacherId = String(body.teacher_id || "");
+      const teachingDays = Array.isArray(body.teaching_days) ? [...new Set(body.teaching_days.map(String))] : [];
+      const validDays = ["السبت", "الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
+      if (!classId || !teacherId || !teachingDays.length || teachingDays.some(day => !validDays.includes(day))) {
+        return NextResponse.json({ error: "اختر الحلقة والمعلم ويوم تدريس واحدًا على الأقل." }, { status: 400 });
+      }
+      const { admin } = manager;
+      const [{ data: classRow }, { data: teacher }] = await Promise.all([
+        admin.from("classes").select("id").eq("id", classId).maybeSingle(),
+        admin.from("profiles").select("id, full_name").eq("id", teacherId).eq("role", "teacher").eq("is_active", true).maybeSingle(),
+      ]);
+      if (!classRow || !teacher) return NextResponse.json({ error: "الحلقة أو حساب المعلم غير موجود أو غير نشط." }, { status: 404 });
+      const { data: existing, error: existingError } = await admin.from("class_teachers").select("id").eq("class_id", classId).eq("teacher_id", teacherId).maybeSingle();
+      if (existingError) throw existingError;
+      if (existing) return NextResponse.json({ error: "هذا المعلم مسند إلى الحلقة بالفعل. يمكنك تعديل أيامه." }, { status: 409 });
+      const { data, error } = await admin.from("class_teachers").insert({ class_id: classId, teacher_id: teacherId, teaching_days: teachingDays }).select("id, class_id, teacher_id, teaching_days").single();
+      if (error) throw error;
+      return NextResponse.json({ success: true, assignment: { ...data, teacher } }, { status: 201 });
+    }
 
     const name = String(body.name || "").trim();
     const description = String(body.description || "").trim();
@@ -238,6 +268,17 @@ export async function PATCH(request) {
     }
 
     const body = await request.json();
+
+    if (body.action === "update_assignment") {
+      const assignmentId = String(body.assignment_id || "");
+      const teachingDays = Array.isArray(body.teaching_days) ? [...new Set(body.teaching_days.map(String))] : [];
+      const validDays = ["السبت", "الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
+      if (!assignmentId || !teachingDays.length || teachingDays.some(day => !validDays.includes(day))) return NextResponse.json({ error: "حدد أيام تدريس صحيحة." }, { status: 400 });
+      const { data, error } = await manager.admin.from("class_teachers").update({ teaching_days: teachingDays }).eq("id", assignmentId).select("id, class_id, teacher_id, teaching_days").maybeSingle();
+      if (error) throw error;
+      if (!data) return NextResponse.json({ error: "الإسناد غير موجود." }, { status: 404 });
+      return NextResponse.json({ success: true, assignment: data });
+    }
 
     const id = String(body.id || "");
     const name = String(body.name || "").trim();
@@ -333,5 +374,21 @@ export async function PATCH(request) {
       { error: "تعذر تحديث بيانات الحلقة." },
       { status: 500 }
     );
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    const manager = await requireEditor();
+    if (manager.error) return NextResponse.json({ error: manager.error }, { status: manager.status });
+    const { searchParams } = new URL(request.url);
+    const assignmentId = searchParams.get("assignment_id");
+    if (!assignmentId) return NextResponse.json({ error: "معرّف الإسناد غير موجود." }, { status: 400 });
+    const { error } = await manager.admin.from("class_teachers").delete().eq("id", assignmentId);
+    if (error) throw error;
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("DELETE class assignment error:", error);
+    return NextResponse.json({ error: "تعذر إلغاء إسناد المعلم." }, { status: 500 });
   }
 }
