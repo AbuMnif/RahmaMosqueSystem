@@ -124,10 +124,18 @@
 }
 
 .section-title-row {
+  direction: rtl;
   display: flex;
   align-items: end;
   justify-content: space-between;
   margin: 38px 0 18px;
+  text-align: right;
+}
+
+.section-title-row > div {
+  direction: rtl;
+  text-align: right;
+  margin-right: 0;
 }
 
 .section-title-row div span {
@@ -265,8 +273,8 @@
     font-size: 19px;
   }
 }
-/* رابط الدخول إلى القسم المتاح */
 
+/* رابط الدخول إلى القسم المتاح */
 .module-card-bottom a {
   display: inline-flex;
   align-items: center;
@@ -299,5 +307,21 @@
 }
 
 /* Guardian unread activity badge */
-.module-card-title-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.activity-unread-badge{display:inline-flex;align-items:center;flex-shrink:0;padding:5px 9px;border-radius:20px;background:#fff0e8;color:#a64220;font-size:11px;font-weight:800}
+.module-card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.activity-unread-badge {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 5px 9px;
+  border-radius: 20px;
+  background: #fff0e8;
+  color: #a64220;
+  font-size: 11px;
+  font-weight: 800;
+}
