@@ -93,3 +93,14 @@
 .guardian-child-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px;width:min(100%,680px)}
 .guardian-child-tabs button{width:100%;min-width:0;min-height:44px;display:flex;align-items:center;justify-content:center;text-align:center;white-space:normal;overflow-wrap:anywhere}
 @media(max-width:760px){.guardian-child-tabs{width:100%;grid-template-columns:repeat(auto-fit,minmax(min(100%,135px),1fr))}}
+
+
+/* اختيار أكثر من ابن لرد النشاط */
+.guardian-activity-multi{align-items:flex-start;flex-direction:column;gap:10px}
+.guardian-activity-multi>strong{font-size:12px;color:#34473a}
+.guardian-activity-student-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:8px;width:100%}
+.guardian-activity-student-option{min-width:0;min-height:46px;display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid #dce5dc;border-radius:9px;background:#fff;color:#34473a;font-size:12px;cursor:pointer}
+.guardian-activity-student-option:has(input:checked){border-color:#174c35;background:#f0f6ee}
+.guardian-activity-student-option input{width:18px;height:18px;flex:0 0 18px;accent-color:#174c35}
+.guardian-activity-student-option span{min-width:0;flex:1}
+.guardian-activity-student-option small{color:#68756c;font-size:10px}
