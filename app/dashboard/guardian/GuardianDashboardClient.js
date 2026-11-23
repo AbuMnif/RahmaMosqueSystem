@@ -314,7 +314,7 @@ export default function GuardianDashboardClient({ profile }) {
         <section className="guardian-panel"><h3>ملاحظات المعلم</h3><div className="guardian-notes">{selected.notes.length?selected.notes.map(n=><article key={n.id}><div><strong>{dateText(n.note_date)}</strong><small>{dateText(n.created_at)}</small></div><p>{n.note}</p></article>):<p className="guardian-muted">لا توجد ملاحظات مسجلة.</p>}</div></section>
         <footer className="guardian-last-update">آخر تحديث للسجلات: <strong>{selected.lastUpdate?new Date(selected.lastUpdate).toLocaleString("ar",{dateStyle:"medium",timeStyle:"short"}):"لا توجد تحديثات مسجلة"}</strong></footer>
       </div>}
-    </>}
+    </> : null}
 
   </main>;
 }
