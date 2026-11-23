@@ -1,4 +1,5 @@
 import "./globals.css";
+import "./device-responsive.css";
 import RemoveOfflineSupport from "./components/RemoveOfflineSupport";
 
 export const metadata = {
@@ -7,15 +8,19 @@ export const metadata = {
   applicationName: "عَون",
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: [{ url: "/awon-icon.svg", type: "image/svg+xml" }],
-    shortcut: ["/awon-icon.svg"],
-    apple: [{ url: "/awon-icon.svg", type: "image/svg+xml" }]
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" }
+    ],
+    shortcut: ["/icons/icon-192.png"],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }]
   },
 };
 
 export const viewport = {
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
   themeColor: "#174C35",
   colorScheme: "light",
 };

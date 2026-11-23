@@ -1,0 +1,247 @@
+/* Device-wide layout safeguards: phones, tablets, laptops and desktop */
+html {
+  width: 100%;
+  max-width: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+}
+
+img, svg, video, canvas, iframe {
+  max-width: 100%;
+}
+
+button, input, select, textarea {
+  max-width: 100%;
+  font-family: inherit;
+}
+
+button, a, input, select, textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where(main, section, article, header, footer, nav, form, .public-container,
+.dashboard-content, .classes-content, .activities-wrap, .awn-wrap) {
+  min-width: 0;
+}
+
+:where(.public-site, .dashboard-page, .classes-page, .activities-page,
+.new-student-page, .awn-page) {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+:where(.public-site *, .dashboard-page *, .classes-page *, .activities-page *,
+.new-student-page *, .awn-page *) {
+  min-width: 0;
+}
+
+:where(input, select, textarea) {
+  box-sizing: border-box;
+}
+
+:where(button, .header-login, .primary-button, .secondary-button, .join-button) {
+  touch-action: manipulation;
+}
+
+.back-to-top {
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (max-width: 900px) {
+  .public-container {
+    width: min(100% - 36px, 760px);
+  }
+
+  .about-content,
+  .rahma-content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .programs-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .module-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .classes-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .activity-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  html {
+    scroll-padding-top: 12px;
+  }
+
+  .public-container,
+  .dashboard-content,
+  .classes-content,
+  .activities-wrap {
+    width: calc(100% - 28px);
+  }
+
+  .header-inner {
+    gap: 10px;
+  }
+
+  .public-nav {
+    max-width: 100%;
+    justify-content: flex-start;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .hero-text h1 {
+    overflow-wrap: anywhere;
+  }
+
+  .hero-actions > a,
+  .join-button,
+  .login-card button {
+    min-height: 46px;
+  }
+
+  .module-grid,
+  .classes-summary,
+  .activity-grid,
+  .activity-response-stats,
+  .rahma-goals {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-header,
+  .classes-header,
+  .activities-header {
+    flex-wrap: wrap;
+  }
+
+  .dashboard-content,
+  .classes-content,
+  .activities-wrap,
+  .awn-wrap {
+    padding-top: 22px;
+    padding-bottom: calc(38px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .section-title-row,
+  .classes-section-heading,
+  .classes-list-heading,
+  .activity-section-heading,
+  .awn-list-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .classes-form,
+  .activity-form,
+  .awn-fields {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .classes-form-actions,
+  .activity-form-actions,
+  .activity-wide {
+    grid-column: 1 / -1;
+  }
+
+  .activity-form-actions button,
+  .classes-form-actions button {
+    width: 100%;
+  }
+
+  .activity-table-wrap,
+  .table-wrap,
+  .table-responsive {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .activity-table-wrap table,
+  .table-wrap table,
+  .table-responsive table {
+    min-width: 620px;
+  }
+
+  .login-page {
+    min-height: 100svh;
+    min-height: 100dvh;
+    padding: 18px 14px;
+    padding-top: max(18px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(18px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .login-card {
+    width: 100%;
+  }
+
+  .awn-actions,
+  .awn-credentials-actions,
+  .registration-actions {
+    width: 100%;
+  }
+
+  .awn-actions button,
+  .awn-credentials-actions button,
+  .registration-actions button,
+  .registration-actions a {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 380px) {
+  .public-container,
+  .dashboard-content,
+  .classes-content,
+  .activities-wrap {
+    width: calc(100% - 22px);
+  }
+
+  .public-brand {
+    gap: 8px;
+  }
+
+  .public-brand img {
+    width: 42px;
+    height: 42px;
+  }
+
+  .header-login {
+    padding: 9px 11px;
+  }
+
+  .hero-text h1 {
+    font-size: clamp(27px, 8vw, 32px);
+  }
+
+  .login-card {
+    padding: 28px 18px;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  button, a, input, select {
+    touch-action: manipulation;
+  }
+
+  .program-card:hover,
+  .primary-button:hover,
+  .join-button:hover {
+    transform: none;
+  }
+}
