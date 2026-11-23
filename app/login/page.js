@@ -82,7 +82,7 @@ export default function LoginPage() {
               onChange={(event) => setPassword(removeWhitespace(event.target.value))}
               placeholder="أدخل كلمة المرور"
               required
-              style={{ width: "100%", paddingRight: "48px", boxSizing: "border-box" }}
+              style={{ width: "100%", paddingLeft: "48px", boxSizing: "border-box" }}
             />
             <button
               type="button"
@@ -92,8 +92,8 @@ export default function LoginPage() {
               title={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
               style={{
                 position: "absolute",
-                right: "10px",
-                top: "50%",
+                left: "10px",
+                top: "calc(50% - 5px)",
                 transform: "translateY(-50%)",
                 width: "34px",
                 height: "34px",
