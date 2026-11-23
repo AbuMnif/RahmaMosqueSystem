@@ -268,6 +268,25 @@ export default function GuardianDashboardClient({ profile }) {
           <p>نسعد بوجودك في منظومة عَون الإدارية. اختر القسم الذي تريد الاطلاع عليه.</p>
         </div>
       </section>
+      {!loading && !error && children.length > 0 && <>
+        <section className="guardian-shortcuts" aria-label="الأقسام الرئيسية">
+          <button type="button" className="guardian-shortcut-card guardian-shortcut-activities" onClick={() => setShowActivities(true)}>
+            <span className="guardian-shortcut-icon" aria-hidden="true">▣</span>
+            <span className="guardian-shortcut-copy"><strong>الأنشطة والموافقات</strong><small>اطّلع على الأنشطة وسجّل موافقتك أو اعتذارك</small></span>
+            {unreadActivities > 0 && <span className="guardian-shortcut-badge">{unreadActivities > 99 ? "99+" : unreadActivities} جديد</span>}
+            <span className="guardian-shortcut-arrow" aria-hidden="true">←</span>
+          </button>
+          <button type="button" className="guardian-shortcut-card guardian-shortcut-children" onClick={openChildren}>
+            <span className="guardian-shortcut-icon" aria-hidden="true">♧</span>
+            <span className="guardian-shortcut-copy"><strong>الأبناء</strong><small>اختر الابن للاطلاع على ملفه وسجلاته التعليمية</small></span>
+            <span className="guardian-shortcut-arrow" aria-hidden="true">←</span>
+          </button>
+        </section>
+        {showActivities && <div className="guardian-activities-area">
+          <button type="button" className="guardian-section-back" onClick={() => setShowActivities(false)}>→ العودة إلى الأقسام</button>
+          <GuardianActivities students={data.students} />
+        </div>}
+      </>}
     </div>
     {loading ? <div className="guardian-state">جارٍ تحميل بيانات الأبناء...</div> : error ? <div className="guardian-state guardian-error">{error}<button onClick={load}>إعادة المحاولة</button></div> : !children.length ? <div className="guardian-state">لا يوجد أبناء مرتبطون بحسابك حاليًا. يرجى مراجعة إدارة المنظومة.</div> : <>
       <section className="guardian-child-picker" id="guardian-child-picker"><div><small>ملفات الأبناء</small><h2>اختر ملف الابن</h2></div><div className="guardian-child-tabs">{children.map(({student})=><button key={student.id} className={student.id===selectedId?"active":""} onClick={()=>setSelectedId(student.id)}>{fullName(student)}</button>)}</div></section>
@@ -281,24 +300,6 @@ export default function GuardianDashboardClient({ profile }) {
         <footer className="guardian-last-update">آخر تحديث للسجلات: <strong>{selected.lastUpdate?new Date(selected.lastUpdate).toLocaleString("ar",{dateStyle:"medium",timeStyle:"short"}):"لا توجد تحديثات مسجلة"}</strong></footer>
       </div>}
     </>}
-    {!loading && !error && children.length > 0 && <>
-      <section className="guardian-shortcuts" aria-label="الأقسام الرئيسية">
-        <button type="button" className="guardian-shortcut-card guardian-shortcut-activities" onClick={() => setShowActivities(true)}>
-          <span className="guardian-shortcut-icon" aria-hidden="true">▣</span>
-          <span className="guardian-shortcut-copy"><strong>الأنشطة والموافقات</strong><small>اطّلع على الأنشطة وسجّل موافقتك أو اعتذارك</small></span>
-          {unreadActivities > 0 && <span className="guardian-shortcut-badge">{unreadActivities > 99 ? "99+" : unreadActivities} جديد</span>}
-          <span className="guardian-shortcut-arrow" aria-hidden="true">←</span>
-        </button>
-        <button type="button" className="guardian-shortcut-card guardian-shortcut-children" onClick={openChildren}>
-          <span className="guardian-shortcut-icon" aria-hidden="true">♧</span>
-          <span className="guardian-shortcut-copy"><strong>الأبناء</strong><small>اختر الابن للاطلاع على ملفه وسجلاته التعليمية</small></span>
-          <span className="guardian-shortcut-arrow" aria-hidden="true">←</span>
-        </button>
-      </section>
-      {showActivities && <div className="guardian-activities-area">
-        <button type="button" className="guardian-section-back" onClick={() => setShowActivities(false)}>→ العودة إلى الأقسام</button>
-        <GuardianActivities students={data.students} />
-      </div>}
-    </>}
+
   </main>;
 }
