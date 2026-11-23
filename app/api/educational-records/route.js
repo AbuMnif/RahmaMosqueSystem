@@ -85,12 +85,17 @@ export async function GET() {
     const teacherIds = [...new Set((as.data || []).map(x => x.teacher_id))];
     const tr = teacherIds.length ? await admin.from("profiles").select("id,full_name").in("id", teacherIds) : { data:[], error:null };
     if (tr.error) throw tr.error;
-    const recordIds = [...(a.data||[]), ...(m.data||[]), ...(e.data||[]), ...(n.data||[]), ...(rr.data||[])].map(x=>x.id);
-    const audit = recordIds.length ? await admin.from("record_audit_logs").select("id,record_table,record_id,action,changed_by,old_data,new_data,created_at").in("record_id", recordIds).order("created_at",{ascending:false}).limit(3000) : {data:[],error:null};
-    if (audit.error) throw audit.error;
-    const changerIds=[...new Set((audit.data||[]).map(x=>x.changed_by).filter(Boolean))];
-    const changers=changerIds.length?await admin.from("profiles").select("id,full_name").in("id",changerIds):{data:[],error:null};
-    if(changers.error)throw changers.error;
+    // Audit details contain before/after record data and are not exposed to guardians.
+    let audit = { data: [], error: null };
+    let changers = { data: [], error: null };
+    if (profile.role !== "guardian") {
+      const recordIds = [...(a.data||[]), ...(m.data||[]), ...(e.data||[]), ...(n.data||[]), ...(rr.data||[])].map(x=>x.id);
+      audit = recordIds.length ? await admin.from("record_audit_logs").select("id,record_table,record_id,action,changed_by,old_data,new_data,created_at").in("record_id", recordIds).order("created_at",{ascending:false}).limit(3000) : {data:[],error:null};
+      if (audit.error) throw audit.error;
+      const changerIds=[...new Set((audit.data||[]).map(x=>x.changed_by).filter(Boolean))];
+      changers=changerIds.length?await admin.from("profiles").select("id,full_name").in("id",changerIds):{data:[],error:null};
+      if(changers.error)throw changers.error;
+    }
     return NextResponse.json({ success:true, data:{ profile, readOnly:["platform_supervisor","guardian"].includes(profile.role), classes:cr.data||[], students:sr.data||[], attendance:a.data||[], memorization:m.data||[], exams:e.data||[], notes:n.data||[], enrollments:en.data||[], assignments:as.data||[], examResults:rr.data||[], teachers:tr.data||[], auditLogs:(audit.data||[]).map(x=>({...x,changed_by_name:changers.data?.find(p=>p.id===x.changed_by)?.full_name||"النظام"})), fetchedAt:new Date().toISOString() } });
   } catch (e) { console.error("Educational records GET", e); return NextResponse.json({ error:"تعذر تحميل بيانات السجل التعليمي." }, { status:500 }); }
 }
