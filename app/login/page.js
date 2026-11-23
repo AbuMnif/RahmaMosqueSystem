@@ -8,6 +8,7 @@ export default function LoginPage() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -19,11 +20,18 @@ export default function LoginPage() {
     return () => { active = false; };
   }, [router]);
 
+  function removeWhitespace(value) {
+    return value.replace(/\s+/g, "");
+  }
+
   async function handleLogin(event) {
     event.preventDefault();
 
     setError("");
     setLoading(true);
+
+    const cleanUsername = removeWhitespace(username);
+    const cleanPassword = removeWhitespace(password);
 
     try {
       const response = await fetch("/api/auth/login", {
@@ -32,8 +40,8 @@ export default function LoginPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          username: username.trim(),
-          password,
+          username: cleanUsername,
+          password: cleanPassword,
         }),
       });
 
@@ -66,21 +74,32 @@ export default function LoginPage() {
             type="text"
             autoComplete="username"
             value={username}
-            onChange={(event) => setUsername(event.target.value)}
+            onChange={(event) => setUsername(removeWhitespace(event.target.value))}
             placeholder="أدخل اسم المستخدم"
             required
           />
 
           <label htmlFor="password">كلمة المرور</label>
-          <input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="أدخل كلمة المرور"
-            required
-          />
+          <div className="login-password-field">
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(removeWhitespace(event.target.value))}
+              placeholder="أدخل كلمة المرور"
+              required
+            />
+            <button
+              type="button"
+              className="login-password-toggle"
+              onClick={() => setShowPassword(value => !value)}
+              aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+              aria-pressed={showPassword}
+            >
+              {showPassword ? "إخفاء" : "إظهار"}
+            </button>
+          </div>
 
           {error && <div className="login-error">{error}</div>}
 
