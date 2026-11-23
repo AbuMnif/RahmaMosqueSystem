@@ -109,7 +109,15 @@ function GuardianActivities({ students }) {
       const r = await fetch("/api/guardian/activities", { cache: "no-store" });
       const j = await r.json();
       if (!r.ok || !j.success) throw new Error(j.error || "تعذر تحميل الأنشطة.");
-      setPayload({ activities: j.activities || [], responses: j.responses || [] });
+      setPayload({ activities: j.activities || [], responses: j.responses || [], children: j.children || [] });
+      const unseenIds = (j.activities || []).filter(a => a.is_new).map(a => a.id);
+      if (unseenIds.length) {
+        fetch("/api/guardian/activities", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ activity_ids: unseenIds })
+        }).catch(() => {});
+      }
       setSelectedByActivity(current => {
         const next = {...current};
         (j.activities || []).forEach(a => {
@@ -148,13 +156,14 @@ function GuardianActivities({ students }) {
     {loadingActivities ? <div className="guardian-activity-empty">جارٍ تحميل الأنشطة...</div> :
       !payload.activities.length ? <div className="guardian-activity-empty">لا توجد أنشطة منشورة تتطلب ردًا حاليًا.</div> :
       payload.activities.map(activity => {
-        const studentId = selectedByActivity[activity.id] || students[0]?.id || "";
-        const student = students.find(s => s.id === studentId);
+        const studentId = selectedByActivity[activity.id] || payload.children?.[0]?.id || students[0]?.id || "";
+        const student = (payload.children || students).find(s => s.id === studentId);
         const response = getResponse(activity.id, studentId);
         const canRespond = activity.can_respond && studentId;
         const key = activity.id + ":" + studentId;
         return <article className="guardian-activity-card" key={activity.id}>
           <div className="guardian-activity-top"><div><span className="guardian-activity-type">{activity.activity_type}</span><h3>{activity.title}</h3></div>
+            {activity.is_new && <span className="guardian-activity-new">جديد</span>}
             <span className={"guardian-response-status " + (response?.decision === "accepted" ? "accepted" : response?.decision === "declined" ? "declined" : "pending")}>{response?.decision === "accepted" ? "تمت الموافقة" : response?.decision === "declined" ? "تم الرفض" : activity.can_respond ? "بانتظار الرد" : "انتهت المهلة"}</span>
           </div>
           <div className="guardian-activity-meta"><span>التاريخ: {dateText(activity.activity_date)}</span>{activity.start_time && <span>الوقت: {String(activity.start_time).slice(0,5)}{activity.end_time ? " – "+String(activity.end_time).slice(0,5) : ""}</span>}{activity.location && <span>المكان: {activity.location}</span>}{activity.response_deadline && <span>آخر موعد للرد: {new Date(activity.response_deadline).toLocaleString("ar",{dateStyle:"medium",timeStyle:"short"})}</span>}</div>
