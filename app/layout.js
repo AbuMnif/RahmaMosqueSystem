@@ -2,9 +2,15 @@ import "./globals.css";
 import RemoveOfflineSupport from "./components/RemoveOfflineSupport";
 
 export const metadata = {
-  title: "منظومة عَون الإدارية | مسجد التراحم",
-  description: "منظومة رقمية أُنشئت من قبل مسجد التراحم لتوحيد الأعمال التعليمية والإدارية، ومساندة الطلاب والمعلمين وأولياء الأمور.",
+  title: "عَون",
+  description: "منظومة عَون الإدارية",
   applicationName: "عَون",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [{ url: "/awon-icon.svg", type: "image/svg+xml" }],
+    shortcut: ["/awon-icon.svg"],
+    apple: [{ url: "/awon-icon.svg", type: "image/svg+xml" }]
+  },
 };
 
 export const viewport = {

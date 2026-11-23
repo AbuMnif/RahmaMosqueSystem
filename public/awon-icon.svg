@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<rect width="512" height="512" rx="126" fill="#174c35"/>
+<rect x="3" y="3" width="506" height="506" rx="123" fill="none" stroke="#b9d0c3" stroke-width="5" opacity=".65"/>
+<text x="256" y="326" text-anchor="middle" font-size="282" font-family="Arial, 'Noto Naskh Arabic', sans-serif" fill="#fff" direction="rtl">ع</text>
+<path d="M226 115h60" stroke="#fff" stroke-width="12" stroke-linecap="round"/>
+</svg>
