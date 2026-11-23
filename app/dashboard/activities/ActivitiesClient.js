@@ -8,7 +8,7 @@ const fmtTime=v=>v?String(v).slice(0,5):"—";
 const fullName=x=>x.student_name||"طالب";
 
 export default function ActivitiesClient({profile}){
- const readOnly=profile.role==="platform_supervisor";
+ const readOnly=profile.role==="platform_supervisor";\n const canViewTechnical=profile.role==="admin";
  const [activities,setActivities]=useState([]),[responses,setResponses]=useState([]);
  const [form,setForm]=useState(empty),[editing,setEditing]=useState(null);
  const [selected,setSelected]=useState(null),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false);
@@ -61,7 +61,7 @@ export default function ActivitiesClient({profile}){
  {selected&&<section className="activity-responses"><div className="activity-section-heading"><div><span>تفاصيل النشاط</span><h2>{selected.title}</h2><p>الردود المسجلة فقط؛ غير الظاهرين في القائمة لم يرسلوا ردًا بعد.</p></div><button type="button" onClick={()=>setSelected(null)}>إغلاق</button></div>
  <div className="activity-response-stats"><article><strong>{stats.accepted}</strong><span>موافقات</span></article><article><strong>{stats.declined}</strong><span>اعتذارات</span></article><article><strong>{selectedResponses.length}</strong><span>إجمالي الردود</span></article></div>
  <div className="activity-export-actions"><button onClick={()=>exportRows(selectedResponses.filter(x=>x.decision==="accepted"),"موافقات-"+selected.title+".xlsx",true)}>تصدير الموافقين</button><button onClick={()=>exportRows(selectedResponses.filter(x=>x.decision==="declined"),"اعتذارات-"+selected.title+".xlsx")}>تصدير المعتذرين</button><button onClick={exportAll}>تصدير التقرير الشامل</button></div>
- {selectedResponses.length===0?<div className="activity-empty">لم تصل أي ردود لهذا النشاط حتى الآن.</div>:<div className="activity-table-wrap"><table><thead><tr><th>الطالب</th><th>ولي الأمر</th><th>القرار</th><th>وقت الرد</th><th>التوقيع</th>{!readOnly&&<th>تفاصيل تقنية</th>}</tr></thead><tbody>{selectedResponses.map(x=><tr key={x.id}><td>{fullName(x)}</td><td>{x.guardian_name}</td><td><span className={x.decision==="accepted"?"decision-yes":"decision-no"}>{x.decision==="accepted"?"موافق":"معتذر"}</span></td><td>{new Date(x.responded_at).toLocaleString("ar")}</td><td>{x.decision==="accepted"?(x.signature_strokes?"توقيع محفوظ":"غير متاح"):"—"}</td>{!readOnly&&<td><small>الجهاز: {x.device_info||"غير متاح"}<br/>IP: {x.ip_address||"غير متاح"}<br/>وقت التوقيع: {x.signed_at?new Date(x.signed_at).toLocaleString("ar"):"—"}</small></td>}</tr>)}</tbody></table></div>}
+ {selectedResponses.length===0?<div className="activity-empty">لم تصل أي ردود لهذا النشاط حتى الآن.</div>:<div className="activity-table-wrap"><table><thead><tr><th>الطالب</th><th>ولي الأمر</th><th>القرار</th><th>وقت الرد</th><th>التوقيع</th>{canViewTechnical&&<th>تفاصيل تقنية</th>}</tr></thead><tbody>{selectedResponses.map(x=><tr key={x.id}><td>{fullName(x)}</td><td>{x.guardian_name}</td><td><span className={x.decision==="accepted"?"decision-yes":"decision-no"}>{x.decision==="accepted"?"موافق":"معتذر"}</span></td><td>{new Date(x.responded_at).toLocaleString("ar")}</td><td>{x.decision==="accepted"?(x.signature_strokes?"توقيع محفوظ":"غير متاح"):"—"}</td>{canViewTechnical&&<td><small>الجهاز: {x.device_info||"غير متاح"}<br/>IP: {x.ip_address||"غير متاح"}<br/>وقت التوقيع: {x.signed_at?new Date(x.signed_at).toLocaleString("ar"):"—"}</small></td>}</tr>)}</tbody></table></div>}
  </section>}
  </div></main>;
 }
