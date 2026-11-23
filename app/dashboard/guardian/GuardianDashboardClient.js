@@ -66,10 +66,25 @@ export default function GuardianDashboardClient({ profile }) {
 
   return <main className="guardian-page" dir="rtl">
     <header className="guardian-header">
-      <a href="/dashboard" className="guardian-brand"><span className="guardian-mark">ع</span><span><strong>منظومة عَون</strong><small>مسجد التراحم · بوابة ولي الأمر</small></span></a>
-      <div className="guardian-account"><span>{(profile.full_name || "و").trim().charAt(0)}</span><div><strong>{profile.full_name}</strong><small>ولي الأمر</small></div><button onClick={async()=>{await fetch("/api/auth/logout",{method:"POST"});window.location.replace("/login");}}>تسجيل الخروج</button></div>
+      <a className="guardian-brand" href="/">
+        <img src="/images/mosque-logo.jpg" alt="شعار مسجد التراحم" />
+        <span><strong>منظومة عَون</strong><small>مسجد التراحم</small></span>
+      </a>
+      <div className="guardian-account">
+        <span>{(profile.full_name || "م").trim().charAt(0)}</span>
+        <div><strong>{profile.full_name}</strong><small>ولي الأمر</small></div>
+        <button onClick={async()=>{await fetch("/api/auth/logout",{method:"POST"});window.location.replace("/login");}}>تسجيل الخروج</button>
+      </div>
     </header>
-    <section className="guardian-hero"><div><small>بوابة الأسرة</small><h1>متابعة الأبناء</h1><p>يمكنك الاطلاع على السجلات التعليمية والحضور والحفظ ونتائج الاختبارات لأبنائك.</p></div><div className="guardian-hero-count"><strong>{children.length}</strong><span>الأبناء المرتبطون بحسابك</span></div></section>
+    <div className="guardian-dashboard-content">
+      <section className="guardian-welcome">
+        <div>
+          <span className="guardian-kicker">مسجد التراحم</span>
+          <h1>مرحبًا، {profile.full_name}</h1>
+          <p>نسعد بوجودك في منظومة عَون الإدارية. اختر القسم الذي تريد الاطلاع عليه.</p>
+        </div>
+      </section>
+    </div>
     {loading ? <div className="guardian-state">جارٍ تحميل بيانات الأبناء...</div> : error ? <div className="guardian-state guardian-error">{error}<button onClick={load}>إعادة المحاولة</button></div> : !children.length ? <div className="guardian-state">لا يوجد أبناء مرتبطون بحسابك حاليًا. يرجى مراجعة إدارة المنظومة.</div> : <>
       <section className="guardian-child-picker"><div><small>ملفات الأبناء</small><h2>اختر ملف الابن</h2></div><div className="guardian-child-tabs">{children.map(({student})=><button key={student.id} className={student.id===selectedId?"active":""} onClick={()=>setSelectedId(student.id)}>{fullName(student)}</button>)}</div></section>
       {selected && <div className="guardian-content">
