@@ -26,7 +26,6 @@ export default function LoginPage() {
 
   async function handleLogin(event) {
     event.preventDefault();
-
     setError("");
     setLoading(true);
 
@@ -36,15 +35,9 @@ export default function LoginPage() {
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: cleanUsername,
-          password: cleanPassword,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: cleanUsername, password: cleanPassword }),
       });
-
       const result = await response.json();
 
       if (!response.ok) {
@@ -80,7 +73,7 @@ export default function LoginPage() {
           />
 
           <label htmlFor="password">كلمة المرور</label>
-          <div className="login-password-field">
+          <div style={{ position: "relative", width: "100%" }}>
             <input
               id="password"
               type={showPassword ? "text" : "password"}
@@ -89,15 +82,64 @@ export default function LoginPage() {
               onChange={(event) => setPassword(removeWhitespace(event.target.value))}
               placeholder="أدخل كلمة المرور"
               required
+              style={{ width: "100%", paddingLeft: "48px", boxSizing: "border-box" }}
             />
             <button
               type="button"
-              className="login-password-toggle"
               onClick={() => setShowPassword(value => !value)}
               aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
               aria-pressed={showPassword}
+              title={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+              style={{
+                position: "absolute",
+                left: "10px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: "34px",
+                height: "34px",
+                padding: 0,
+                border: 0,
+                borderRadius: "50%",
+                background: "transparent",
+                color: "currentColor",
+                display: "grid",
+                placeItems: "center",
+                cursor: "pointer",
+                boxShadow: "none",
+              }}
             >
-              {showPassword ? "إخفاء" : "إظهار"}
+              <svg
+                viewBox="0 0 24 24"
+                width="21"
+                height="21"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                style={{ overflow: "visible" }}
+              >
+                <path
+                  d="M2.2 12s3.5-6 9.8-6 9.8 6 9.8 6-3.5 6-9.8 6-9.8-6-9.8-6Z"
+                  style={{ transformOrigin: "center", transition: "transform 220ms ease, opacity 180ms ease" }}
+                />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="2.8"
+                  style={{ transformOrigin: "center", transition: "transform 220ms ease" , transform: showPassword ? "scale(1.18)" : "scale(1)" }}
+                />
+                <path
+                  d="M3 3 21 21"
+                  style={{
+                    opacity: showPassword ? 0 : 1,
+                    transform: showPassword ? "scale(0.5)" : "scale(1)",
+                    transformOrigin: "center",
+                    transition: "opacity 180ms ease, transform 220ms ease",
+                  }}
+                />
+              </svg>
             </button>
           </div>
 
