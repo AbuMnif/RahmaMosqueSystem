@@ -41,12 +41,19 @@ export async function GET() {
         .in("activity_id", safeIds(activityIds))
       : { data: [], error: null };
     if (responseResult.error) throw responseResult.error;
+    const viewsResult = await db.from("guardian_activity_views")
+      .select("activity_id,viewed_at").eq("guardian_id", profile.id)
+      .in("activity_id", safeIds(activityIds));
+    if (viewsResult.error) throw viewsResult.error;
+    const seenIds = new Set((viewsResult.data || []).map(x => x.activity_id));
     const now = Date.now();
     return NextResponse.json({
       success: true,
       children,
+      unread_count: activities.filter(a => !seenIds.has(a.id)).length,
       activities: activities.map(a => ({
         ...a,
+        is_new: !seenIds.has(a.id),
         can_respond: !a.response_deadline || new Date(a.response_deadline).getTime() >= now
       })),
       responses: responseResult.data || []
@@ -54,6 +61,32 @@ export async function GET() {
   } catch (e) {
     console.error("Guardian activities GET:", e);
     return NextResponse.json({ error: "تعذر تحميل الأنشطة." }, { status: 500 });
+  }
+}
+
+export async function PATCH(request) {
+  try {
+    const ctx = await getGuardian();
+    if (ctx.error) return NextResponse.json({ error: ctx.error }, { status: ctx.status });
+    const { db, profile } = ctx;
+    const body = await request.json();
+    const ids = Array.isArray(body.activity_ids)
+      ? [...new Set(body.activity_ids.map(x => String(x)).filter(x => /^[0-9a-f-]{36}$/i.test(x)))].slice(0, 200)
+      : [];
+    if (!ids.length) return NextResponse.json({ success: true, marked: 0 });
+    const { data: published, error: activityError } = await db.from("activities")
+      .select("id").eq("status", "published").in("id", ids);
+    if (activityError) throw activityError;
+    const rows = (published || []).map(x => ({ guardian_id: profile.id, activity_id: x.id, viewed_at: new Date().toISOString() }));
+    if (rows.length) {
+      const { error } = await db.from("guardian_activity_views")
+        .upsert(rows, { onConflict: "guardian_id,activity_id" });
+      if (error) throw error;
+    }
+    return NextResponse.json({ success: true, marked: rows.length });
+  } catch (e) {
+    console.error("Guardian activity views PATCH:", e);
+    return NextResponse.json({ error: "تعذر تحديث حالة إشعارات الأنشطة." }, { status: 500 });
   }
 }
 
