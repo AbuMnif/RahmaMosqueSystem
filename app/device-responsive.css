@@ -147,6 +147,26 @@ button, a, input, select, textarea {
     gap: 10px;
   }
 
+  /* Keep the dashboard workspace heading aligned to the right in RTL,
+     even though this responsive group switches its children to a column. */
+  .section-title-row {
+    direction: rtl;
+    align-items: flex-end;
+    width: 100%;
+    text-align: right;
+  }
+
+  .section-title-row > div {
+    align-self: flex-end;
+    width: 100%;
+    direction: rtl;
+    text-align: right;
+  }
+
+  .section-title-row .role-pill {
+    align-self: flex-start;
+  }
+
   .classes-form,
   .activity-form,
   .awn-fields {
