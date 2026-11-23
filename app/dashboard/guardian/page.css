@@ -71,3 +71,19 @@
 .guardian-section-back{display:block;margin:0 0 10px auto;padding:8px 13px;border:1px solid #dce5dc;border-radius:9px;background:#fff;color:#174c35;font:inherit;font-size:12px;cursor:pointer}
 #guardian-child-picker{scroll-margin-top:18px}
 @media(max-width:600px){.guardian-shortcuts{width:calc(100% - 24px);gap:9px}.guardian-shortcut-card{min-height:118px;padding:12px 10px;gap:8px;border-radius:12px}.guardian-shortcut-icon{width:34px;height:34px;flex-basis:34px;font-size:18px}.guardian-shortcut-copy strong{font-size:12px}.guardian-shortcut-copy small{font-size:10px}.guardian-shortcut-badge{position:absolute;top:7px;left:7px;padding:4px 6px;font-size:9px}.guardian-shortcut-arrow{font-size:14px}}
+
+
+/* Guardian cards match the manager and teacher module-card design */
+.guardian-shortcuts{width:min(1160px,calc(100% - 32px));margin:28px auto 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px;direction:rtl}
+.guardian-module-card{min-width:0;min-height:190px;padding:23px;background:#fff;border:1px solid #e7ece5;border-radius:15px;box-shadow:0 7px 24px rgba(23,76,53,.035);display:flex;flex-direction:column;text-align:right;color:#202820;font:inherit;cursor:pointer;transition:border-color .2s ease,box-shadow .2s ease}
+.guardian-module-card:hover{border-color:rgba(23,76,53,.35);box-shadow:0 9px 26px rgba(23,76,53,.08)}
+.guardian-module-status{align-self:flex-start;font-size:11px;color:#8a7540;background:#fbf7e8;padding:6px 12px;border-radius:20px}
+.guardian-module-card h3{margin:19px 0 8px;color:#174c35;font-size:17px}
+.guardian-module-title-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.guardian-module-title-row h3{min-width:0}
+.guardian-module-card p{margin:0;color:#68756c;font-size:13px;line-height:1.9}
+.guardian-module-card-bottom{margin-top:auto;padding-top:18px;color:#879188;font-size:11px;border-top:1px solid #f0f2ee}
+.guardian-module-card-bottom{padding-top:18px}
+.guardian-module-card-bottom:after{content:"";display:block}
+.guardian-activities-area{width:100%;margin-top:20px}
+@media(max-width:560px){.guardian-shortcuts{width:calc(100% - 24px);gap:12px}.guardian-module-card{min-height:175px;padding:16px 13px}.guardian-module-card h3{font-size:14px;margin-top:16px}.guardian-module-card p{font-size:11px}.guardian-module-card-bottom{font-size:10px}}
