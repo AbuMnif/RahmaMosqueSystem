@@ -41,11 +41,11 @@ export default function ActivitiesClient({profile}){
  <form className="activity-form" onSubmit={submit}>
  <label>اسم النشاط<input required minLength="2" maxLength="160" value={form.title} onChange={e=>setForm({...form,title:e.target.value})} placeholder="مثال: الرحلة الترفيهية"/></label>
  <label>نوع النشاط<input required value={form.activity_type} onChange={e=>setForm({...form,activity_type:e.target.value})} placeholder="رحلة، مسابقة، لقاء..."/></label>
- <label>التاريخ (سنة-شهر-يوم)<input type="text" inputMode="numeric" autoComplete="off" maxLength="10" pattern="\\d{4}-\\d{2}-\\d{2}" title="أدخل التاريخ بهذا الشكل: 2026-11-23" required value={form.activity_date} onChange={e=>setForm({...form,activity_date:e.target.value})} placeholder="2026-11-23"/></label>
- <label>وقت البداية (ساعة:دقيقة)<input type="text" inputMode="numeric" autoComplete="off" maxLength="5" pattern="([01]\\d|2[0-3]):[0-5]\\d" title="أدخل الوقت بنظام 24 ساعة، مثل 08:30" value={form.start_time||""} onChange={e=>setForm({...form,start_time:e.target.value})} placeholder="08:30"/></label>
- <label>وقت النهاية (ساعة:دقيقة)<input type="text" inputMode="numeric" autoComplete="off" maxLength="5" pattern="([01]\\d|2[0-3]):[0-5]\\d" title="أدخل الوقت بنظام 24 ساعة، مثل 13:45" value={form.end_time||""} onChange={e=>setForm({...form,end_time:e.target.value})} placeholder="13:45"/></label>
+ <label>التاريخ<input type="date" required value={form.activity_date} onChange={e=>setForm({...form,activity_date:e.target.value})}/></label>
+ <label>وقت البداية<input type="time" value={form.start_time||""} onChange={e=>setForm({...form,start_time:e.target.value})}/></label>
+ <label>وقت النهاية<input type="time" value={form.end_time||""} onChange={e=>setForm({...form,end_time:e.target.value})}/></label>
  <label>الموقع<input value={form.location||""} onChange={e=>setForm({...form,location:e.target.value})} placeholder="موقع إقامة النشاط"/></label>
- <label>آخر موعد للرد (سنة-شهر-يوم ساعة:دقيقة)<input type="text" inputMode="numeric" autoComplete="off" maxLength="16" pattern="\\d{4}-\\d{2}-\\d{2}T([01]\\d|2[0-3]):[0-5]\\d" title="مثال: 2026-11-23T20:00" value={form.response_deadline||""} onChange={e=>setForm({...form,response_deadline:e.target.value})} placeholder="2026-11-23T20:00"/></label>
+ <label>آخر موعد للرد<input type="datetime-local" value={form.response_deadline||""} onChange={e=>setForm({...form,response_deadline:e.target.value})}/></label>
  <label>حالة النشر<select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option value="published">منشور</option><option value="draft">مسودة</option></select></label>
  <label className="activity-wide">التفاصيل<textarea rows="4" value={form.details||""} onChange={e=>setForm({...form,details:e.target.value})} placeholder="تفاصيل النشاط والتعليمات..."/></label>
  <div className="activity-form-actions"><button disabled={saving}>{saving?"جارٍ الحفظ...":editing?"حفظ التعديلات":"إنشاء النشاط"}</button></div>
