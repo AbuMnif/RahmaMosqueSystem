@@ -25,5 +25,7 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  if (profile.role === "guardian") redirect("/dashboard/guardian");
+
   return <DashboardClient profile={profile} />;
 }
