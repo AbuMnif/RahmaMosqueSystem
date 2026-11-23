@@ -119,9 +119,12 @@ function GuardianActivities({ students, onViewed }) {
         }).then(response => { if (response.ok) onViewed?.(); }).catch(() => {});
       }
       setSelectedByActivity(current => {
-        const next = {...current};
-        (j.activities || []).forEach(a => {
-          if (!next[a.id] || !(j.children || []).some(s => s.id === next[a.id])) next[a.id] = j.children?.[0]?.id || "";
+        const next = { ...current };
+        const childIds = (j.children || []).map(child => child.id);
+        (j.activities || []).forEach(activity => {
+          const existing = Array.isArray(next[activity.id]) ? next[activity.id] : [];
+          const valid = existing.filter(id => childIds.includes(id));
+          next[activity.id] = valid.length ? valid : (childIds[0] ? [childIds[0]] : []);
         });
         return next;
       });
