@@ -93,7 +93,7 @@ export default function LoginPage() {
               style={{
                 position: "absolute",
                 left: "10px",
-                top: "calc(50% - 5px)",
+                top: "calc(50% - 15px)",
                 transform: "translateY(-50%)",
                 width: "34px",
                 height: "34px",
