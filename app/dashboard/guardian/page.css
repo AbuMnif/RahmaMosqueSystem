@@ -53,3 +53,21 @@
 .module-card-title-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .activity-unread-badge{display:inline-flex;align-items:center;flex-shrink:0;padding:5px 9px;border-radius:20px;background:#fff0e8;color:#a64220;font-size:11px;font-weight:800}
 .guardian-activity-new{display:inline-flex;align-items:center;padding:4px 9px;border-radius:20px;background:#fff0e8;color:#a64220;font-size:10px;font-weight:800}
+
+/* Guardian dashboard primary section cards */
+.guardian-shortcuts{width:min(1160px,calc(100% - 32px));margin:18px auto 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;direction:rtl}
+.guardian-shortcut-card{position:relative;min-width:0;min-height:112px;padding:18px 20px;display:flex;align-items:center;gap:13px;text-align:right;border:1px solid #e2e9df;border-radius:15px;background:#fff;color:#202820;font:inherit;cursor:pointer;transition:border-color .18s ease,transform .18s ease,box-shadow .18s ease}
+.guardian-shortcut-card:hover{border-color:#b9cdbb;box-shadow:0 7px 20px rgba(23,76,53,.07);transform:translateY(-1px)}
+.guardian-shortcut-activities{border-right:4px solid #d9bd38}
+.guardian-shortcut-children{border-right:4px solid #174c35}
+.guardian-shortcut-icon{width:43px;height:43px;flex:0 0 43px;display:grid;place-items:center;border-radius:11px;background:#edf4e9;color:#174c35;font-size:23px;font-weight:800}
+.guardian-shortcut-activities .guardian-shortcut-icon{background:#fbf7e4;color:#947c1e}
+.guardian-shortcut-copy{min-width:0;display:flex;flex:1;flex-direction:column;gap:6px}
+.guardian-shortcut-copy strong{color:#174c35;font-size:15px}
+.guardian-shortcut-copy small{color:#68756c;font-size:11px;line-height:1.7}
+.guardian-shortcut-badge{flex:0 0 auto;padding:6px 10px;border-radius:20px;background:#fff0e8;color:#a64220;font-size:11px;font-weight:800;white-space:nowrap}
+.guardian-shortcut-arrow{flex:0 0 auto;color:#809085;font-size:18px}
+.guardian-activities-area{width:100%;margin-top:18px}
+.guardian-section-back{display:block;margin:0 0 10px auto;padding:8px 13px;border:1px solid #dce5dc;border-radius:9px;background:#fff;color:#174c35;font:inherit;font-size:12px;cursor:pointer}
+#guardian-child-picker{scroll-margin-top:18px}
+@media(max-width:600px){.guardian-shortcuts{width:calc(100% - 24px);gap:9px}.guardian-shortcut-card{min-height:118px;padding:12px 10px;gap:8px;border-radius:12px}.guardian-shortcut-icon{width:34px;height:34px;flex-basis:34px;font-size:18px}.guardian-shortcut-copy strong{font-size:12px}.guardian-shortcut-copy small{font-size:10px}.guardian-shortcut-badge{position:absolute;top:7px;left:7px;padding:4px 6px;font-size:9px}.guardian-shortcut-arrow{font-size:14px}}
