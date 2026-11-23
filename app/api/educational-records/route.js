@@ -64,7 +64,7 @@ export async function GET() {
     const { admin, sb, profile } = ctx;
     const scope = await getScope(admin, profile);
     let cq = admin.from("classes").select("id,name,is_active").eq("is_active", true).order("name");
-    let sq = admin.from("students").select("id,first_name,middle_name,last_name,guardian_id,is_active").eq("is_active", true).order("first_name");
+    let sq = admin.from("students").select("id,first_name,middle_name,last_name,birth_date,guardian_id,is_active").eq("is_active", true).order("first_name");
     if (scope.classIds) cq = cq.in("id", safeIds(scope.classIds));
     if (scope.studentIds) sq = sq.in("id", safeIds(scope.studentIds));
     const [cr, sr] = await Promise.all([cq, sq]);
