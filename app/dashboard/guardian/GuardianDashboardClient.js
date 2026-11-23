@@ -131,18 +131,22 @@ function GuardianActivities({ students, onViewed }) {
 
   useEffect(() => { refresh(); }, [refresh]);
   const getResponse = (activityId, studentId) => payload.responses.find(x => x.activity_id === activityId && x.student_id === studentId);
-  const submit = async (activity, decision, studentId) => {
-    const key = activity.id + ":" + studentId;
+  const submit = async (activity, decision, studentIds) => {
+    const ids = Array.isArray(studentIds) ? studentIds : [studentIds];
+    if (!ids.length) { setFailure("حدد ابنًا واحدًا على الأقل."); return; }
+    const key = activity.id + ":" + ids.join(",");
     setBusy(key); setFailure(""); setNotice("");
     try {
       const strokes = signatureByActivity[activity.id] || [];
-      const r = await fetch("/api/guardian/activities", {
-        method: "POST", headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ activity_id: activity.id, student_id: studentId, decision, signature_strokes: decision === "accepted" ? strokes : null })
-      });
-      const j = await r.json();
-      if (!r.ok || !j.success) throw new Error(j.error || "تعذر حفظ الرد.");
-      setNotice(decision === "accepted" ? "تم تسجيل موافقتك وتوقيعك بنجاح." : "تم تسجيل رفض النشاط لهذا الابن.");
+      for (const studentId of ids) {
+        const r = await fetch("/api/guardian/activities", {
+          method: "POST", headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ activity_id: activity.id, student_id: studentId, decision, signature_strokes: decision === "accepted" ? strokes : null })
+        });
+        const j = await r.json();
+        if (!r.ok || !j.success) throw new Error(j.error || "تعذر حفظ رد أحد الأبناء.");
+      }
+      setNotice(decision === "accepted" ? `تم تسجيل الموافقة والتوقيع لـ ${ids.length} من الأبناء.` : `تم تسجيل رفض النشاط لـ ${ids.length} من الأبناء.`);
       setConfirmReject(null);
       await refresh();
     } catch (e) { setFailure(e.message || "تعذر حفظ الرد."); }
@@ -156,35 +160,50 @@ function GuardianActivities({ students, onViewed }) {
     {loadingActivities ? <div className="guardian-activity-empty">جارٍ تحميل الأنشطة...</div> :
       !payload.activities.length ? <div className="guardian-activity-empty">لا توجد أنشطة منشورة تتطلب ردًا حاليًا.</div> :
       payload.activities.map(activity => {
-        const studentId = selectedByActivity[activity.id] || payload.children?.[0]?.id || students[0]?.id || "";
-        const student = (payload.children || students).find(s => s.id === studentId);
-        const response = getResponse(activity.id, studentId);
-        const canRespond = activity.can_respond && studentId;
-        const key = activity.id + ":" + studentId;
+        const childList = payload.children || students;
+        const selectedIds = selectedByActivity[activity.id] || [];
+        const selectedChildren = childList.filter(s => selectedIds.includes(s.id));
+        const key = activity.id + ":" + selectedIds.join(",");
+        const toggleStudent = (id) => setSelectedByActivity(current => {
+          const values = current[activity.id] || [];
+          return {...current, [activity.id]: values.includes(id) ? values.filter(x => x !== id) : [...values, id]};
+        });
         return <article className="guardian-activity-card" key={activity.id}>
           <div className="guardian-activity-top"><div><span className="guardian-activity-type">{activity.activity_type}</span><h3>{activity.title}</h3></div>
             {activity.is_new && <span className="guardian-activity-new">جديد</span>}
-            <span className={"guardian-response-status " + (response?.decision === "accepted" ? "accepted" : response?.decision === "declined" ? "declined" : "pending")}>{response?.decision === "accepted" ? "تمت الموافقة" : response?.decision === "declined" ? "تم الرفض" : activity.can_respond ? "بانتظار الرد" : "انتهت المهلة"}</span>
+            <span className="guardian-response-status pending">{activity.can_respond ? "بانتظار الرد" : "انتهت المهلة"}</span>
           </div>
           <div className="guardian-activity-meta"><span>التاريخ: {dateText(activity.activity_date)}</span>{activity.start_time && <span>الوقت: {String(activity.start_time).slice(0,5)}{activity.end_time ? " – "+String(activity.end_time).slice(0,5) : ""}</span>}{activity.location && <span>المكان: {activity.location}</span>}{activity.response_deadline && <span>آخر موعد للرد: {new Date(activity.response_deadline).toLocaleString("ar",{dateStyle:"medium",timeStyle:"short"})}</span>}</div>
           {activity.details && <p className="guardian-activity-details">{activity.details}</p>}
-          <div className="guardian-activity-child"><label htmlFor={"activity-child-"+activity.id}>تسجيل الرد باسم الابن</label><select id={"activity-child-"+activity.id} value={studentId} onChange={e=>setSelectedByActivity(v=>({...v,[activity.id]:e.target.value}))}>{students.map(s=><option key={s.id} value={s.id}>{fullName(s)}</option>)}</select></div>
-          {response && <p className="guardian-previous-response">رد {fullName(student)}: <strong>{response.decision === "accepted" ? "موافق" : "رافض"}</strong> — {response.responded_at ? new Date(response.responded_at).toLocaleString("ar",{dateStyle:"medium",timeStyle:"short"}) : ""}</p>}
-          {canRespond && <div className="guardian-activity-actions">
-            <div className="guardian-signature-title"><strong>التوقيع الإلكتروني للموافقة</strong><small>ارسم توقيعك بإصبعك أو باستخدام الفأرة.</small></div>
+          <div className="guardian-activity-child guardian-activity-multi">
+            <strong>حدد الأبناء المطلوب تسجيل الرد لهم</strong>
+            <div className="guardian-activity-student-list">
+              {childList.map(child => {
+                const previous = getResponse(activity.id, child.id);
+                return <label className="guardian-activity-student-option" key={child.id}>
+                  <input type="checkbox" checked={selectedIds.includes(child.id)} onChange={() => toggleStudent(child.id)} disabled={!activity.can_respond || Boolean(busy)} />
+                  <span>{fullName(child)}</span>
+                  {previous && <small>{previous.decision === "accepted" ? "سبق تسجيل الموافقة" : "سبق تسجيل الرفض"}</small>}
+                </label>;
+              })}
+            </div>
+          </div>
+          {selectedChildren.length > 0 && <p className="guardian-previous-response">الأبناء المحددون: <strong>{selectedChildren.map(fullName).join("، ")}</strong></p>}
+          {activity.can_respond && <div className="guardian-activity-actions">
+            <div className="guardian-signature-title"><strong>التوقيع الإلكتروني للموافقة</strong><small>سيُستخدم التوقيع نفسه لجميع الأبناء المحددين.</small></div>
             <SignaturePad key={activity.id} onChange={v=>setSignatureByActivity(s=>({...s,[activity.id]:v}))} />
             <div className="guardian-decision-buttons">
-              <button type="button" className="approve" disabled={busy===key || !(signatureByActivity[activity.id]||[]).length} onClick={()=>submit(activity,"accepted",studentId)}>{busy===key ? "جارٍ الحفظ..." : response?.decision === "accepted" ? "تحديث الموافقة" : "موافقة وتوقيع"}</button>
-              <button type="button" className="reject" disabled={Boolean(busy)} onClick={()=>setConfirmReject({activity,studentId,studentName:fullName(student)})}>{response?.decision === "declined" ? "تأكيد الرفض مجددًا" : "رفض النشاط"}</button>
+              <button type="button" className="approve" disabled={busy===key || !selectedIds.length || !(signatureByActivity[activity.id]||[]).length} onClick={()=>submit(activity,"accepted",selectedIds)}>{busy===key ? "جارٍ الحفظ..." : "موافقة وتوقيع المحددين"}</button>
+              <button type="button" className="reject" disabled={Boolean(busy) || !selectedIds.length} onClick={()=>setConfirmReject({activity,studentIds:selectedIds,studentNames:selectedChildren.map(fullName)})}>رفض النشاط للمحددين</button>
             </div>
           </div>}
         </article>;
       })}
     {confirmReject && <div className="guardian-confirm-backdrop" role="presentation"><section className="guardian-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="reject-title">
       <span className="guardian-confirm-mark">!</span><h3 id="reject-title">تأكيد رفض النشاط</h3>
-      <p>هل أنت متأكد من رفض هذا النشاط للابن <strong>{confirmReject.studentName}</strong>؟</p>
+      <p>هل أنت متأكد من رفض هذا النشاط للأبناء المحددين: <strong>{confirmReject.studentNames.join("، ")}</strong>؟</p>
       <p className="guardian-confirm-note">سيتم تسجيل الرفض لهذا الابن فقط، ويمكنك تعديل الرد قبل انتهاء مهلة النشاط.</p>
-      <div><button type="button" className="reject" disabled={Boolean(busy)} onClick={()=>submit(confirmReject.activity,"declined",confirmReject.studentId)}>نعم، تأكيد الرفض</button><button type="button" className="cancel" onClick={()=>setConfirmReject(null)}>تراجع</button></div>
+      <div><button type="button" className="reject" disabled={Boolean(busy)} onClick={()=>submit(confirmReject.activity,"declined",confirmReject.studentIds)}>نعم، تأكيد الرفض</button><button type="button" className="cancel" onClick={()=>setConfirmReject(null)}>تراجع</button></div>
     </section></div>}
   </section>;
 }
