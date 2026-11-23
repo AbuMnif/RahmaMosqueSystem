@@ -8,7 +8,8 @@ const fmtTime=v=>v?String(v).slice(0,5):"—";
 const fullName=x=>x.student_name||"طالب";
 
 function SignaturePreview({strokes}){if(!Array.isArray(strokes)||!strokes.length)return <span className="signature-empty">—</span>;return <svg className="activity-signature" viewBox="0 0 600 180" role="img" aria-label="توقيع ولي الأمر">{strokes.map((stroke,i)=>Array.isArray(stroke)&&stroke.length>0?<polyline key={i} points={stroke.map(p=>`${Math.max(0,Math.min(1,Number(p.x)||0))*600},${Math.max(0,Math.min(1,Number(p.y)||0))*180}`).join(" ")} fill="none" stroke="#174c35" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>:null)}</svg>}
-\nexport default function ActivitiesClient({profile}){
+
+export default function ActivitiesClient({profile}){
  const readOnly=profile.role==="platform_supervisor";
  const canViewTechnical=profile.role==="admin";
  const [activities,setActivities]=useState([]),[responses,setResponses]=useState([]);
