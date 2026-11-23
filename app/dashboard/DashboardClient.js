@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const roleNames = {
   admin: "مدير النظام",
@@ -62,6 +62,17 @@ const moduleLinks = {
 
 export default function DashboardClient({ profile }) {
   const [loggingOut, setLoggingOut] = useState(false);
+  const [unreadActivities, setUnreadActivities] = useState(0);
+
+  useEffect(() => {
+    if (profile.role !== "guardian") return;
+    let active = true;
+    fetch("/api/guardian/activities", { cache: "no-store" })
+      .then(r => r.json())
+      .then(j => { if (active && j.success) setUnreadActivities(Number(j.unread_count) || 0); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [profile.role]);
 
   const items = modules[profile.role] || [];
   const isPlatformSupervisor =
@@ -186,7 +197,14 @@ export default function DashboardClient({ profile }) {
                   {isAvailable ? "متاح" : "قريبًا"}
                 </span>
 
-                <h3>{title}</h3>
+                <div className="module-card-title-row">
+                  <h3>{title}</h3>
+                  {profile.role === "guardian" && title === "موافقات الأنشطة" && unreadActivities > 0 && (
+                    <span className="activity-unread-badge" aria-label={`${unreadActivities} أنشطة جديدة`}>
+                      {unreadActivities > 99 ? "99+" : unreadActivities} جديد
+                    </span>
+                  )}
+                </div>
 
                 <p>{description}</p>
 
