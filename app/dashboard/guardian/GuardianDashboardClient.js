@@ -195,6 +195,19 @@ export default function GuardianDashboardClient({ profile }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState("");
+  const [unreadActivities, setUnreadActivities] = useState(0);
+  const [showActivities, setShowActivities] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/guardian/activities", { cache: "no-store" })
+      .then(r => r.json())
+      .then(j => { if (active && j.success) setUnreadActivities(Number(j.unread_count) || 0); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  const openChildren = () => document.getElementById("guardian-child-picker")?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -257,7 +270,7 @@ export default function GuardianDashboardClient({ profile }) {
       </section>
     </div>
     {loading ? <div className="guardian-state">جارٍ تحميل بيانات الأبناء...</div> : error ? <div className="guardian-state guardian-error">{error}<button onClick={load}>إعادة المحاولة</button></div> : !children.length ? <div className="guardian-state">لا يوجد أبناء مرتبطون بحسابك حاليًا. يرجى مراجعة إدارة المنظومة.</div> : <>
-      <section className="guardian-child-picker"><div><small>ملفات الأبناء</small><h2>اختر ملف الابن</h2></div><div className="guardian-child-tabs">{children.map(({student})=><button key={student.id} className={student.id===selectedId?"active":""} onClick={()=>setSelectedId(student.id)}>{fullName(student)}</button>)}</div></section>
+      <section className="guardian-child-picker" id="guardian-child-picker"><div><small>ملفات الأبناء</small><h2>اختر ملف الابن</h2></div><div className="guardian-child-tabs">{children.map(({student})=><button key={student.id} className={student.id===selectedId?"active":""} onClick={()=>setSelectedId(student.id)}>{fullName(student)}</button>)}</div></section>
       {selected && <div className="guardian-content">
         <section className="guardian-profile-card"><div className="guardian-initial">{fullName(selected.student).charAt(0)}</div><div className="guardian-profile-main"><small>ملف الطالب</small><h2>{fullName(selected.student)}</h2><p>الحلقة: <strong>{selected.className}</strong></p><p>المعلم: <strong>{selected.teacherNames.join("، ") || "غير محدد"}</strong></p></div><div className="guardian-birth"><span>تاريخ الميلاد</span><strong>{dateText(selected.student.birth_date)}</strong><span>العمر</span><strong>{ageText(selected.student.birth_date)}</strong></div></section>
         <section className="guardian-stat-grid"><article><span>الحضور</span><strong>{counts.present}</strong><small>يومًا</small></article><article><span>الغياب</span><strong>{counts.absent}</strong><small>يومًا</small></article><article><span>التأخر</span><strong>{counts.late}</strong><small>مرات</small></article><article><span>الحفظ والمراجعة</span><strong>{selected.memorization.length}</strong><small>سجلًا</small></article><article><span>الاختبارات</span><strong>{selected.exams.length}</strong><small>اختبارًا</small></article></section>
@@ -268,6 +281,24 @@ export default function GuardianDashboardClient({ profile }) {
         <footer className="guardian-last-update">آخر تحديث للسجلات: <strong>{selected.lastUpdate?new Date(selected.lastUpdate).toLocaleString("ar",{dateStyle:"medium",timeStyle:"short"}):"لا توجد تحديثات مسجلة"}</strong></footer>
       </div>}
     </>}
-    {!loading && !error && children.length > 0 && <GuardianActivities students={data.students} />}
+    {!loading && !error && children.length > 0 && <>
+      <section className="guardian-shortcuts" aria-label="الأقسام الرئيسية">
+        <button type="button" className="guardian-shortcut-card guardian-shortcut-activities" onClick={() => setShowActivities(true)}>
+          <span className="guardian-shortcut-icon" aria-hidden="true">▣</span>
+          <span className="guardian-shortcut-copy"><strong>الأنشطة والموافقات</strong><small>اطّلع على الأنشطة وسجّل موافقتك أو اعتذارك</small></span>
+          {unreadActivities > 0 && <span className="guardian-shortcut-badge">{unreadActivities > 99 ? "99+" : unreadActivities} جديد</span>}
+          <span className="guardian-shortcut-arrow" aria-hidden="true">←</span>
+        </button>
+        <button type="button" className="guardian-shortcut-card guardian-shortcut-children" onClick={openChildren}>
+          <span className="guardian-shortcut-icon" aria-hidden="true">♧</span>
+          <span className="guardian-shortcut-copy"><strong>الأبناء</strong><small>اختر الابن للاطلاع على ملفه وسجلاته التعليمية</small></span>
+          <span className="guardian-shortcut-arrow" aria-hidden="true">←</span>
+        </button>
+      </section>
+      {showActivities && <div className="guardian-activities-area">
+        <button type="button" className="guardian-section-back" onClick={() => setShowActivities(false)}>→ العودة إلى الأقسام</button>
+        <GuardianActivities students={data.students} />
+      </div>}
+    </>}
   </main>;
 }
