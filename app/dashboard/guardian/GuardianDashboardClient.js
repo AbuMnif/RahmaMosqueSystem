@@ -214,6 +214,8 @@ export default function GuardianDashboardClient({ profile }) {
     return () => window.clearInterval(timer);
   }, [refreshUnreadActivities]);
 
+  const handleActivitiesViewed = useCallback(() => setUnreadActivities(0), []);
+
   const openSection = (section) => {
     setActiveSection(section);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -297,7 +299,7 @@ export default function GuardianDashboardClient({ profile }) {
           </button>
         </section>
         {activeSection === "activities" && <div className="guardian-activities-area">
-          <GuardianActivities students={data.students} onViewed={() => setUnreadActivities(0)} />
+          <GuardianActivities students={data.students} onViewed={handleActivitiesViewed} />
         </div>}
       </>}
     </div>
