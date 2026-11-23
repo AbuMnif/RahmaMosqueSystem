@@ -165,6 +165,9 @@ button, a, input, select, textarea {
 
   .section-title-row .role-pill {
     align-self: flex-start;
+    direction: rtl;
+    margin-right: auto;
+    margin-left: 0;
   }
 
   .classes-form,
