@@ -1,13 +1,14 @@
 "use client";
 import {useCallback,useEffect,useMemo,useState} from "react";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 const empty={title:"",activity_type:"رحلة",activity_date:"",start_time:"",end_time:"",location:"",details:"",response_deadline:"",status:"published"};
 const fmtDate=v=>v?new Date(v+"T00:00:00").toLocaleDateString("ar"): "—";
 const fmtTime=v=>v?String(v).slice(0,5):"—";
 const fullName=x=>x.student_name||"طالب";
 
-export default function ActivitiesClient({profile}){
+function SignaturePreview({strokes}){if(!Array.isArray(strokes)||!strokes.length)return <span className="signature-empty">—</span>;return <svg className="activity-signature" viewBox="0 0 600 180" role="img" aria-label="توقيع ولي الأمر">{strokes.map((stroke,i)=>Array.isArray(stroke)&&stroke.length>0?<polyline key={i} points={stroke.map(p=>`${Math.max(0,Math.min(1,Number(p.x)||0))*600},${Math.max(0,Math.min(1,Number(p.y)||0))*180}`).join(" ")} fill="none" stroke="#174c35" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>:null)}</svg>}
+\nexport default function ActivitiesClient({profile}){
  const readOnly=profile.role==="platform_supervisor";
  const canViewTechnical=profile.role==="admin";
  const [activities,setActivities]=useState([]),[responses,setResponses]=useState([]);
@@ -29,8 +30,37 @@ export default function ActivitiesClient({profile}){
   catch(e){setError(e.message||"تعذر الحفظ");}finally{setSaving(false);}
  }
  async function changeStatus(item,status){if(readOnly)return;if(!window.confirm("هل تريد تغيير حالة النشاط؟"))return;try{const r=await fetch("/api/activities",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:item.id,status})});const d=await r.json();if(!r.ok)throw new Error(d.error||"تعذر التحديث");setNotice("تم تحديث حالة النشاط.");await load();}catch(e){setError(e.message);}}
- function exportRows(rows,name,includeSignature=false){const data=rows.map(x=>({ "اسم الطالب":fullName(x),"ولي الأمر":x.guardian_name,"القرار":x.decision==="accepted"?"موافق":"معتذر","تاريخ الرد":new Date(x.responded_at).toLocaleString("ar"),...(includeSignature?{"التوقيع الإلكتروني (بيانات المسارات)":x.signature_strokes?JSON.stringify(x.signature_strokes):"لا يوجد"}:{})}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data), "الردود");XLSX.writeFile(wb,name);}
- function exportAll(){const yes=selectedResponses.filter(x=>x.decision==="accepted"),no=selectedResponses.filter(x=>x.decision==="declined");const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(yes.map(x=>({"اسم الطالب":fullName(x),"ولي الأمر":x.guardian_name,"القرار":"موافق","تاريخ الرد":new Date(x.responded_at).toLocaleString("ar"),"بيانات التوقيع":x.signature_strokes?JSON.stringify(x.signature_strokes):""}))),"الموافقات");XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(no.map(x=>({"اسم الطالب":fullName(x),"ولي الأمر":x.guardian_name,"القرار":"معتذر","تاريخ الرد":new Date(x.responded_at).toLocaleString("ar")}))),"الاعتذارات");XLSX.writeFile(wb,"تقرير-"+(selected?.title||"النشاط")+".xlsx");}
+ function signaturePng(strokes){
+  if(!Array.isArray(strokes)||!strokes.length)return null;
+  const canvas=document.createElement("canvas");canvas.width=600;canvas.height=180;
+  const ctx=canvas.getContext("2d");if(!ctx)return null;
+  ctx.strokeStyle="#174c35";ctx.lineWidth=4.2;ctx.lineCap="round";ctx.lineJoin="round";
+  for(const stroke of strokes){if(!Array.isArray(stroke)||!stroke.length)continue;ctx.beginPath();stroke.forEach((point,index)=>{const x=Math.max(0,Math.min(1,Number(point.x)||0))*canvas.width;const y=Math.max(0,Math.min(1,Number(point.y)||0))*canvas.height;if(index===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});ctx.stroke();}
+  return canvas.toDataURL("image/png");
+ }
+ async function exportWorkbook(rows,filename,sheets){
+  const wb=new ExcelJS.Workbook();wb.creator="منظومة عَون الإدارية";
+  for(const sheet of sheets){
+   const ws=wb.addWorksheet(sheet.name,{views:[{rightToLeft:true}]});
+   ws.columns=[{header:"اسم الطالب",key:"student",width:26},{header:"ولي الأمر",key:"guardian",width:25},{header:"القرار",key:"decision",width:14},{header:"تاريخ الرد",key:"date",width:23},{header:"التوقيع",key:"signature",width:24}];
+   ws.getRow(1).height=26;
+   ws.getRow(1).eachCell(c=>{c.font={bold:true,color:{argb:"FFFFFFFF"}};c.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF174C35"}};c.alignment={vertical:"middle",horizontal:"center"};});
+   for(const item of sheet.rows){
+    const row=ws.addRow({student:fullName(item),guardian:item.guardian_name||"—",decision:item.decision==="accepted"?"موافق":"معتذر",date:item.responded_at?new Date(item.responded_at).toLocaleString("ar"):"—",signature:""});
+    row.height=58;row.alignment={vertical:"middle",horizontal:"center"};
+    if(item.decision==="accepted"&&item.signature_strokes){
+     const image=signaturePng(item.signature_strokes);
+     if(image){const imageId=wb.addImage({base64:image,extension:"png"});ws.addImage(imageId,{tl:{col:4,row:row.number-1},br:{col:5,row:row.number}});}
+    }
+   }
+   ws.autoFilter={from:{row:1,column:1},to:{row:1,column:5}};
+   ws.eachRow(row=>row.eachCell(cell=>{cell.alignment={...(cell.alignment||{}),vertical:"middle",horizontal:"center"};}));
+  }
+  const buffer=await wb.xlsx.writeBuffer();const blob=new Blob([buffer],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);
+ }
+ function exportRows(rows,name){exportWorkbook(rows,name,[{name:"الردود",rows}]).catch(e=>setError("تعذر إنشاء ملف Excel: "+(e.message||"خطأ غير معروف")));}
+ function exportAll(){const yes=selectedResponses.filter(x=>x.decision==="accepted"),no=selectedResponses.filter(x=>x.decision==="declined");exportWorkbook(selectedResponses,"تقرير-"+(selected?.title||"النشاط")+".xlsx",[{name:"الموافقات",rows:yes},{name:"الاعتذارات",rows:no}]).catch(e=>setError("تعذر إنشاء ملف Excel: "+(e.message||"خطأ غير معروف")));}
+
  const roleName=profile.role==="admin"?"مدير النظام":profile.role==="supervisor"?"المشرف":"مشرف المنصة";
  return <main className="activities-page" dir="rtl">
  <header className="activities-header"><a href="/dashboard">العودة إلى لوحة التحكم</a><div><strong>{profile.full_name}</strong><small>{roleName}</small></div></header>
@@ -61,8 +91,8 @@ export default function ActivitiesClient({profile}){
  </section>
  {selected&&<section className="activity-responses"><div className="activity-section-heading"><div><span>تفاصيل النشاط</span><h2>{selected.title}</h2><p>الردود المسجلة فقط؛ غير الظاهرين في القائمة لم يرسلوا ردًا بعد.</p></div><button type="button" onClick={()=>setSelected(null)}>إغلاق</button></div>
  <div className="activity-response-stats"><article><strong>{stats.accepted}</strong><span>موافقات</span></article><article><strong>{stats.declined}</strong><span>اعتذارات</span></article><article><strong>{selectedResponses.length}</strong><span>إجمالي الردود</span></article></div>
- <div className="activity-export-actions"><button onClick={()=>exportRows(selectedResponses.filter(x=>x.decision==="accepted"),"موافقات-"+selected.title+".xlsx",true)}>تصدير الموافقين</button><button onClick={()=>exportRows(selectedResponses.filter(x=>x.decision==="declined"),"اعتذارات-"+selected.title+".xlsx")}>تصدير المعتذرين</button><button onClick={exportAll}>تصدير التقرير الشامل</button></div>
- {selectedResponses.length===0?<div className="activity-empty">لم تصل أي ردود لهذا النشاط حتى الآن.</div>:<div className="activity-table-wrap"><table><thead><tr><th>الطالب</th><th>ولي الأمر</th><th>القرار</th><th>وقت الرد</th><th>التوقيع</th>{canViewTechnical&&<th>تفاصيل تقنية</th>}</tr></thead><tbody>{selectedResponses.map(x=><tr key={x.id}><td>{fullName(x)}</td><td>{x.guardian_name}</td><td><span className={x.decision==="accepted"?"decision-yes":"decision-no"}>{x.decision==="accepted"?"موافق":"معتذر"}</span></td><td>{new Date(x.responded_at).toLocaleString("ar")}</td><td>{x.decision==="accepted"?(x.signature_strokes?"توقيع محفوظ":"غير متاح"):"—"}</td>{canViewTechnical&&<td><small>الجهاز: {x.device_info||"غير متاح"}<br/>IP: {x.ip_address||"غير متاح"}<br/>وقت التوقيع: {x.signed_at?new Date(x.signed_at).toLocaleString("ar"):"—"}</small></td>}</tr>)}</tbody></table></div>}
+ <div className="activity-export-actions"><button onClick={()=>exportRows(selectedResponses.filter(x=>x.decision==="accepted"),"موافقات-"+selected.title+".xlsx")}>تصدير الموافقين</button><button onClick={()=>exportRows(selectedResponses.filter(x=>x.decision==="declined"),"اعتذارات-"+selected.title+".xlsx")}>تصدير المعتذرين</button><button onClick={exportAll}>تصدير التقرير الشامل</button></div>
+ {selectedResponses.length===0?<div className="activity-empty">لم تصل أي ردود لهذا النشاط حتى الآن.</div>:<div className="activity-table-wrap"><table><thead><tr><th>الطالب</th><th>ولي الأمر</th><th>القرار</th><th>وقت الرد</th><th>التوقيع</th>{canViewTechnical&&<th>تفاصيل تقنية</th>}</tr></thead><tbody>{selectedResponses.map(x=><tr key={x.id}><td>{fullName(x)}</td><td>{x.guardian_name}</td><td><span className={x.decision==="accepted"?"decision-yes":"decision-no"}>{x.decision==="accepted"?"موافق":"معتذر"}</span></td><td>{new Date(x.responded_at).toLocaleString("ar")}</td><td>{x.decision==="accepted"?<SignaturePreview strokes={x.signature_strokes}/>: "—"}</td>{canViewTechnical&&<td><small>الجهاز: {x.device_info||"غير متاح"}<br/>IP: {x.ip_address||"غير متاح"}<br/>وقت التوقيع: {x.signed_at?new Date(x.signed_at).toLocaleString("ar"):"—"}</small></td>}</tr>)}</tbody></table></div>}
  </section>}
  </div></main>;
 }
