@@ -101,3 +101,8 @@
  opacity:.78;
  margin:0 2px;
 }
+
+/* عرض التوقيع بخلفية شفافة داخل كشف الردود */
+.activity-signature{display:block;width:150px;height:48px;max-width:100%;background:transparent;overflow:visible}
+.signature-empty{color:#9aa59b}
+@media(max-width:700px){.activity-signature{width:130px;height:42px}}
