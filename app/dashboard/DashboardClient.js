@@ -55,6 +55,7 @@ const moduleLinks = {
   "السجلات التعليمية": "/dashboard/educational-records",
   "السجل التعليمي": "/dashboard/educational-records",
   "أبنائي": "/dashboard/guardian",
+  "موافقات الأنشطة": "/dashboard/guardian",
   "إدارة الحسابات": "/dashboard/accounts",
   "الأنشطة والموافقات": "/dashboard/activities",
 };
