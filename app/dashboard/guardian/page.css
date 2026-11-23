@@ -87,3 +87,9 @@
 .guardian-module-card-bottom:after{content:"";display:block}
 .guardian-activities-area{width:100%;margin-top:20px}
 @media(max-width:560px){.guardian-shortcuts{width:calc(100% - 24px);gap:12px}.guardian-module-card{min-height:175px;padding:16px 13px}.guardian-module-card h3{font-size:14px;margin-top:16px}.guardian-module-card p{font-size:11px}.guardian-module-card-bottom{font-size:10px}}
+
+
+/* توحيد مقاسات تبويبات ملفات الأبناء */
+.guardian-child-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px;width:min(100%,680px)}
+.guardian-child-tabs button{width:100%;min-width:0;min-height:44px;display:flex;align-items:center;justify-content:center;text-align:center;white-space:normal;overflow-wrap:anywhere}
+@media(max-width:760px){.guardian-child-tabs{width:100%;grid-template-columns:repeat(auto-fit,minmax(min(100%,135px),1fr))}}
