@@ -93,7 +93,7 @@ function SignaturePad({ onChange }) {
   </div>;
 }
 
-function GuardianActivities({ students }) {
+function GuardianActivities({ students, onViewed }) {
   const [payload, setPayload] = useState({ activities: [], responses: [] });
   const [selectedByActivity, setSelectedByActivity] = useState({});
   const [signatureByActivity, setSignatureByActivity] = useState({});
@@ -116,7 +116,7 @@ function GuardianActivities({ students }) {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ activity_ids: unseenIds })
-        }).catch(() => {});
+        }).then(response => { if (response.ok) onViewed?.(); }).catch(() => {});
       }
       setSelectedByActivity(current => {
         const next = {...current};
@@ -127,7 +127,7 @@ function GuardianActivities({ students }) {
       });
     } catch (e) { setFailure(e.message || "تعذر تحميل الأنشطة."); }
     finally { setLoadingActivities(false); }
-  }, []);
+  }, [onViewed]);
 
   useEffect(() => { refresh(); }, [refresh]);
   const getResponse = (activityId, studentId) => payload.responses.find(x => x.activity_id === activityId && x.student_id === studentId);
@@ -196,18 +196,28 @@ export default function GuardianDashboardClient({ profile }) {
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState("");
   const [unreadActivities, setUnreadActivities] = useState(0);
-  const [showActivities, setShowActivities] = useState(false);
+  const [activeSection, setActiveSection] = useState("children");
 
-  useEffect(() => {
-    let active = true;
-    fetch("/api/guardian/activities", { cache: "no-store" })
-      .then(r => r.json())
-      .then(j => { if (active && j.success) setUnreadActivities(Number(j.unread_count) || 0); })
-      .catch(() => {});
-    return () => { active = false; };
+  const refreshUnreadActivities = useCallback(async () => {
+    try {
+      const response = await fetch("/api/guardian/activities", { cache: "no-store" });
+      const result = await response.json();
+      if (response.ok && result.success) setUnreadActivities(Number(result.unread_count) || 0);
+    } catch {}
   }, []);
 
-  const openChildren = () => document.getElementById("guardian-child-picker")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  useEffect(() => {
+    refreshUnreadActivities();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") refreshUnreadActivities();
+    }, 30000);
+    return () => window.clearInterval(timer);
+  }, [refreshUnreadActivities]);
+
+  const openSection = (section) => {
+    setActiveSection(section);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -270,25 +280,28 @@ export default function GuardianDashboardClient({ profile }) {
       </section>
       {!loading && !error && children.length > 0 && <>
         <section className="guardian-shortcuts" aria-label="الأقسام الرئيسية">
-          <button type="button" className="guardian-shortcut-card guardian-shortcut-activities" onClick={() => setShowActivities(true)}>
-            <span className="guardian-shortcut-icon" aria-hidden="true">▣</span>
-            <span className="guardian-shortcut-copy"><strong>الأنشطة والموافقات</strong><small>اطّلع على الأنشطة وسجّل موافقتك أو اعتذارك</small></span>
-            {unreadActivities > 0 && <span className="guardian-shortcut-badge">{unreadActivities > 99 ? "99+" : unreadActivities} جديد</span>}
-            <span className="guardian-shortcut-arrow" aria-hidden="true">←</span>
+          <button type="button" className="guardian-module-card" onClick={() => openSection("activities")}>
+            <span className="guardian-module-status">متاح</span>
+            <div className="guardian-module-title-row">
+              <h3>الأنشطة والموافقات</h3>
+              {unreadActivities > 0 && <span className="activity-unread-badge">{unreadActivities > 99 ? "99+" : unreadActivities} جديد</span>}
+            </div>
+            <p>مراجعة الأنشطة المنشورة وتسجيل الموافقة أو الاعتذار بالتوقيع.</p>
+            <div className="guardian-module-card-bottom">الدخول إلى القسم</div>
           </button>
-          <button type="button" className="guardian-shortcut-card guardian-shortcut-children" onClick={openChildren}>
-            <span className="guardian-shortcut-icon" aria-hidden="true">♧</span>
-            <span className="guardian-shortcut-copy"><strong>الأبناء</strong><small>اختر الابن للاطلاع على ملفه وسجلاته التعليمية</small></span>
-            <span className="guardian-shortcut-arrow" aria-hidden="true">←</span>
+          <button type="button" className="guardian-module-card" onClick={() => openSection("children")}>
+            <span className="guardian-module-status">متاح</span>
+            <h3>الأبناء</h3>
+            <p>اختيار الابن للاطلاع على ملفه وسجلاته التعليمية.</p>
+            <div className="guardian-module-card-bottom">الدخول إلى القسم</div>
           </button>
         </section>
-        {showActivities && <div className="guardian-activities-area">
-          <button type="button" className="guardian-section-back" onClick={() => setShowActivities(false)}>→ العودة إلى الأقسام</button>
-          <GuardianActivities students={data.students} />
+        {activeSection === "activities" && <div className="guardian-activities-area">
+          <GuardianActivities students={data.students} onViewed={() => setUnreadActivities(0)} />
         </div>}
       </>}
     </div>
-    {loading ? <div className="guardian-state">جارٍ تحميل بيانات الأبناء...</div> : error ? <div className="guardian-state guardian-error">{error}<button onClick={load}>إعادة المحاولة</button></div> : !children.length ? <div className="guardian-state">لا يوجد أبناء مرتبطون بحسابك حاليًا. يرجى مراجعة إدارة المنظومة.</div> : <>
+    {loading ? <div className="guardian-state">جارٍ تحميل بيانات الأبناء...</div> : error ? <div className="guardian-state guardian-error">{error}<button onClick={load}>إعادة المحاولة</button></div> : !children.length ? <div className="guardian-state">لا يوجد أبناء مرتبطون بحسابك حاليًا. يرجى مراجعة إدارة المنظومة.</div> : activeSection === "children" ? <>
       <section className="guardian-child-picker" id="guardian-child-picker"><div><small>ملفات الأبناء</small><h2>اختر ملف الابن</h2></div><div className="guardian-child-tabs">{children.map(({student})=><button key={student.id} className={student.id===selectedId?"active":""} onClick={()=>setSelectedId(student.id)}>{fullName(student)}</button>)}</div></section>
       {selected && <div className="guardian-content">
         <section className="guardian-profile-card"><div className="guardian-initial">{fullName(selected.student).charAt(0)}</div><div className="guardian-profile-main"><small>ملف الطالب</small><h2>{fullName(selected.student)}</h2><p>الحلقة: <strong>{selected.className}</strong></p><p>المعلم: <strong>{selected.teacherNames.join("، ") || "غير محدد"}</strong></p></div><div className="guardian-birth"><span>تاريخ الميلاد</span><strong>{dateText(selected.student.birth_date)}</strong><span>العمر</span><strong>{ageText(selected.student.birth_date)}</strong></div></section>
