@@ -8,7 +8,8 @@ const fmtTime=v=>v?String(v).slice(0,5):"—";
 const fullName=x=>x.student_name||"طالب";
 
 export default function ActivitiesClient({profile}){
- const readOnly=profile.role==="platform_supervisor";\n const canViewTechnical=profile.role==="admin";
+ const readOnly=profile.role==="platform_supervisor";
+ const canViewTechnical=profile.role==="admin";
  const [activities,setActivities]=useState([]),[responses,setResponses]=useState([]);
  const [form,setForm]=useState(empty),[editing,setEditing]=useState(null);
  const [selected,setSelected]=useState(null),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false);
