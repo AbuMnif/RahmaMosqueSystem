@@ -56,6 +56,7 @@ const moduleLinks = {
   "السجل التعليمي": "/dashboard/educational-records",
   "أبنائي": "/dashboard/guardian",
   "إدارة الحسابات": "/dashboard/accounts",
+  "الأنشطة والموافقات": "/dashboard/activities",
 };
 
 export default function DashboardClient({ profile }) {
