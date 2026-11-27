@@ -184,16 +184,16 @@ export async function POST(request) {
     const dup = await admin.from(table).select("id").eq("client_operation_id", clientId).maybeSingle();
     if (dup.data) return NextResponse.json({ success:true, duplicate:true, id:dup.data.id });
     const { class_id:classId, student_id:studentId } = payload;
+    if (!classId) return NextResponse.json({ error:"الحلقة مطلوبة." }, { status:400 });
     if (profile.role === "teacher") {
-      if (!classId) return NextResponse.json({ error:"الحلقة مطلوبة." }, { status:400 });
       const assignment = await admin.from("class_teachers").select("id").eq("class_id",classId).eq("teacher_id",profile.id).maybeSingle();
       if (assignment.error || !assignment.data) return NextResponse.json({ error:"هذه الحلقة غير مسندة إلى حسابك." }, { status:403 });
-      if (studentId) {
-        const activityDate = operation === "attendance" ? payload.attendance_date : operation === "memorization" ? payload.record_date : payload.note_date;
-        if (!activityDate) return NextResponse.json({ error:"تاريخ السجل مطلوب." }, { status:400 });
-        const enrolled = await admin.from("student_enrollments").select("id").eq("class_id",classId).eq("student_id",studentId).lte("start_date",activityDate).or(`end_date.is.null,end_date.gte.${activityDate}`).maybeSingle();
-        if (enrolled.error || !enrolled.data) return NextResponse.json({ error:"الطالب غير مسجل في هذه الحلقة في التاريخ المحدد." }, { status:403 });
-      }
+    }
+    if (studentId) {
+      const activityDate = operation === "attendance" ? payload.attendance_date : operation === "memorization" ? payload.record_date : payload.note_date;
+      if (!activityDate) return NextResponse.json({ error:"تاريخ السجل مطلوب." }, { status:400 });
+      const enrolled = await admin.from("student_enrollments").select("id").eq("class_id",classId).eq("student_id",studentId).lte("start_date",activityDate).or(`end_date.is.null,end_date.gte.${activityDate}`).maybeSingle();
+      if (enrolled.error || !enrolled.data) return NextResponse.json({ error:"الطالب غير مسجل في هذه الحلقة في التاريخ المحدد." }, { status:403 });
     }
     let row;
     if (operation === "attendance") {
