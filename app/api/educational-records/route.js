@@ -130,7 +130,10 @@ export async function POST(request) {
       const normalized = [];
       for (const item of rows) {
         const studentId = String(item.student_id || "");
-        if (!enrolledIds.has(studentId) || savedOperationIds.has(item.client_operation_id)) continue;
+        if (!enrolledIds.has(studentId)) {
+          return NextResponse.json({ error: "يوجد طالب غير مسجل في الحلقة بالتاريخ المحدد." }, { status: 403 });
+        }
+        if (item.client_operation_id && savedOperationIds.has(item.client_operation_id)) continue;
         const status = item.present === true ? "present" : "absent";
         normalized.push({
           id: randomUUID(),
@@ -144,13 +147,34 @@ export async function POST(request) {
         });
       }
       if (!normalized.length) {
-        if (savedOperationIds.size) return NextResponse.json({ success: true, duplicate: true, saved: [], count: 0 });
-        return NextResponse.json({ error: "لا يوجد طلاب مسجلون في الحلقة بهذا التاريخ." }, { status: 400 });
+        return NextResponse.json({ success: true, duplicate: true, saved: [], count: 0 });
       }
-      const saved = await sb.from("attendance_records")
-        .upsert(normalized, { onConflict: "student_id,class_id,attendance_date" })
-        .select("id,student_id,status,attendance_date,class_id");
-      if (saved.error) throw saved.error;
+      // Never overwrite a previously recorded attendance entry. Existing entries
+      // must be reviewed/changed through the approved correction workflow.
+      const existing = await admin.from("attendance_records")
+        .select("id,student_id,client_operation_id")
+        .eq("class_id", classId)
+        .eq("attendance_date", attendanceDate)
+        .in("student_id", safeIds(normalized.map(x => x.student_id)));
+      if (existing.error) throw existing.error;
+      const conflicts = (existing.data || []).filter(row => !normalized.some(item =>
+        item.student_id === row.student_id && item.client_operation_id === row.client_operation_id
+      ));
+      if (conflicts.length) {
+        return NextResponse.json({
+          error: "يوجد تحضير محفوظ مسبقًا لبعض الطلاب في هذا اليوم. لم يتم استبدال أي سجل؛ راجع السجلات أو أرسل طلب تعديل.",
+          conflict: true,
+          conflictStudentIds: conflicts.map(x => x.student_id),
+        }, { status: 409 });
+      }
+      const saved = await sb.from("attendance_records").insert(normalized)
+        .select("id,student_id,status,attendance_date,class_id,client_operation_id");
+      if (saved.error) {
+        if (saved.error.code === "23505") {
+          return NextResponse.json({ error: "حدث تعارض أثناء حفظ التحضير؛ لم يتم استبدال السجلات الموجودة.", conflict: true }, { status: 409 });
+        }
+        throw saved.error;
+      }
       return NextResponse.json({ success: true, saved: saved.data || [], count: (saved.data || []).length });
     }
 
@@ -201,7 +225,14 @@ export async function POST(request) {
       row={client_operation_id:clientId,exam_id:payload.exam_id,student_id:studentId,created_by:profile.id,score:Number(payload.score),notes:payload.notes||null};
     }
     const saved=await sb.from(table).insert(row).select("*").single();
-    if(saved.error){if(saved.error.code==="23505")return NextResponse.json({success:true,duplicate:true});throw saved.error;}
+    if(saved.error){
+      if(saved.error.code==="23505"){
+        const sameOperation=await admin.from(table).select("id").eq("client_operation_id",clientId).maybeSingle();
+        if(sameOperation.data)return NextResponse.json({success:true,duplicate:true,id:sameOperation.data.id});
+        return NextResponse.json({error:"يوجد سجل سابق يتعارض مع هذه العملية. لم يتم استبداله؛ راجع السجل أو أرسل طلب تعديل.",conflict:true},{status:409});
+      }
+      throw saved.error;
+    }
     return NextResponse.json({success:true,row:saved.data});
   } catch(e){console.error("Educational records POST",e);return NextResponse.json({error:"تعذر حفظ السجل. تحقق من البيانات والاتصال."},{status:500});}
 }
