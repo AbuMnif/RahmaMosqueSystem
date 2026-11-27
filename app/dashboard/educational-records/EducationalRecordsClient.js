@@ -5,7 +5,7 @@ import {
  saveEducationalSnapshot, readEducationalSnapshot,
  enqueueEducationalOperation, listEducationalOperations,
  acknowledgeEducationalOperations, readEducationalOfflineMeta,
- saveEducationalOfflineMeta
+ saveEducationalOfflineMeta, updateEducationalOperationStatus
 } from "../../../lib/educationalOfflineStore";
 
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
@@ -72,16 +72,25 @@ export default function EducationalRecordsClient({profile}){
     for(const item of pending){
      if(!navigator.onLine)break;
      try{
+      await updateEducationalOperationStatus(item.operationId,"syncing");
       const response=await fetch("/api/educational-records",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({operation:item.operation,payload:item.payload}),cache:"no-store"});
       const result=await response.json().catch(()=>({}));
       if(response.ok&&result.success===true){
        await acknowledgeEducationalOperations(profile.id,[item.operationId]);
        setNotice("تمت مزامنة سجل محفوظ محليًا بنجاح.");
+      }else if(response.status===409||response.status===400||response.status===403){
+       await updateEducationalOperationStatus(item.operationId,"needs_review",result.error||"تحتاج العملية إلى مراجعة.");
+       setNotice("توجد عملية محفوظة محليًا تحتاج إلى مراجعة قبل اعتمادها.");
+       break;
       }else{
+       await updateEducationalOperationStatus(item.operationId,"pending",result.error||"تعذر الاتصال بالخادم.");
        await saveEducationalOfflineMeta(profile.id,{lastSyncError:result.error||"تعذر اعتماد السجل",lastSyncErrorAt:new Date().toISOString()});
        break;
       }
-     }catch{break}
+     }catch(error){
+      await updateEducationalOperationStatus(item.operationId,"pending",error?.message||"انقطع الاتصال أثناء المزامنة.");
+      break;
+     }
     }
     const remaining=await listEducationalOperations(profile.id,"pending");
     if(remaining.length===0)await reload();
