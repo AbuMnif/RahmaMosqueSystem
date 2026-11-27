@@ -62,6 +62,36 @@ export default function EducationalRecordsClient({profile}){
   }finally{setLoading(false)}
  },[profile.id,profile.role]);
  useEffect(()=>{reload()},[reload]);
+ useEffect(()=>{
+  let running=false;
+  const syncPending=async()=>{
+   if(running||!navigator.onLine)return;
+   running=true;
+   try{
+    const pending=await listEducationalOperations(profile.id,"pending");
+    for(const item of pending){
+     if(!navigator.onLine)break;
+     try{
+      const response=await fetch("/api/educational-records",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({operation:item.operation,payload:item.payload}),cache:"no-store"});
+      const result=await response.json().catch(()=>({}));
+      if(response.ok&&result.success===true){
+       await acknowledgeEducationalOperations(profile.id,[item.operationId]);
+       setNotice("تمت مزامنة سجل محفوظ محليًا بنجاح.");
+      }else{
+       await saveEducationalOfflineMeta(profile.id,{lastSyncError:result.error||"تعذر اعتماد السجل",lastSyncErrorAt:new Date().toISOString()});
+       break;
+      }
+     }catch{break}
+    }
+    const remaining=await listEducationalOperations(profile.id,"pending");
+    if(remaining.length===0)await reload();
+   }finally{running=false}
+  };
+  window.addEventListener("online",syncPending);
+  if(navigator.onLine)syncPending();
+  const timer=setInterval(syncPending,15000);
+  return()=>{window.removeEventListener("online",syncPending);clearInterval(timer)};
+ },[profile.id,reload]);
  async function save(operation,payload){
   if(saveLock.current)return;
   saveLock.current=true;setSavingRecord(true);setNotice("");
