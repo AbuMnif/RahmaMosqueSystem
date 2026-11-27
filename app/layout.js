@@ -1,6 +1,7 @@
 import "./globals.css";
 import "./device-responsive.css";
 import RemoveOfflineSupport from "./components/RemoveOfflineSupport";
+import EducationalServiceWorker from "./components/EducationalServiceWorker";
 
 export const metadata = {
   title: "عَون",
@@ -26,5 +27,5 @@ export const viewport = {
 };
 
 export default function RootLayout({ children }) {
-  return <html lang="ar" dir="rtl"><body><RemoveOfflineSupport />{children}</body></html>;
+  return <html lang="ar" dir="rtl"><body><RemoveOfflineSupport /><EducationalServiceWorker />{children}</body></html>;
 }
