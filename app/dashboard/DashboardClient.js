@@ -82,26 +82,27 @@ export default function DashboardClient({ profile }) {
   async function logout() {
     setLoggingOut(true);
 
+    // Revoke this device's offline educational access immediately. The
+    // unsynchronized operation queue is intentionally preserved.
+    try {
+      await clearEducationalOfflineAccess(profile.id);
+      if ("caches" in window) {
+        const cache = await caches.open("awn-educational-shell-v1");
+        await cache.delete("/dashboard/educational-records");
+      }
+    } catch (offlineCleanupError) {
+      console.error("Could not revoke local educational access:", offlineCleanupError);
+    }
+
     try {
       const response = await fetch("/api/auth/logout", {
         method: "POST",
       });
-
-      if (!response.ok) {
-        throw new Error("logout_failed");
-      }
-
-      try {
-        await clearEducationalOfflineAccess(profile.id);
-        const cache = await caches.open("awn-educational-shell-v1");
-        await cache.delete("/dashboard/educational-records");
-      } catch (offlineCleanupError) {
-        console.error("Could not revoke local educational access:", offlineCleanupError);
-      }
+      if (!response.ok) throw new Error("logout_failed");
       window.location.replace("/login");
     } catch {
       setLoggingOut(false);
-      alert("تعذر تسجيل الخروج. حاول مرة أخرى.");
+      alert("تم إيقاف الوصول المحلي على هذا الجهاز، لكن تعذر إنهاء جلسة الخادم. أعد المحاولة عند توفر الإنترنت.");
     }
   }
 
