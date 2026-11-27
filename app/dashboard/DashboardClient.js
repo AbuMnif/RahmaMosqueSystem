@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { clearEducationalOfflineAccess } from "../../lib/educationalOfflineStore";
 
 const roleNames = {
   admin: "مدير النظام",
@@ -90,6 +91,13 @@ export default function DashboardClient({ profile }) {
         throw new Error("logout_failed");
       }
 
+      try {
+        await clearEducationalOfflineAccess(profile.id);
+        const cache = await caches.open("awn-educational-shell-v1");
+        await cache.delete("/dashboard/educational-records");
+      } catch (offlineCleanupError) {
+        console.error("Could not revoke local educational access:", offlineCleanupError);
+      }
       window.location.replace("/login");
     } catch {
       setLoggingOut(false);
