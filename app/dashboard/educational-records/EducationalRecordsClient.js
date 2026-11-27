@@ -166,7 +166,14 @@ export default function EducationalRecordsClient({profile}){
    const result=await response.json().catch(()=>({}));
    if(!response.ok||result.success!==true)throw new Error(result.error||"لم يؤكد الخادم حفظ السجل.");
    setModal("");setNotice("تم حفظ السجل بنجاح.");await reload();
-  }catch(error){setNotice(error.message||"تعذر حفظ السجل.")}
+  }catch(error){
+   if(error instanceof TypeError||(typeof navigator!=="undefined"&&!navigator.onLine)){
+    try{
+     await enqueueEducationalOperation({accountId:profile.id,operationId:item.payload.client_operation_id,operation,payload:item.payload});
+     setModal("");setNotice("انقطع الاتصال أثناء الحفظ؛ تم الاحتفاظ بالسجل على هذا الجهاز وسيُزامن عند عودة الإنترنت.");
+    }catch(queueError){setNotice(queueError.message||"تعذر حفظ السجل محليًا.");}
+   }else setNotice(error.message||"تعذر حفظ السجل.");
+  }
   finally{saveLock.current=false;setSavingRecord(false)}
  }
  async function saveAttendanceSheet(){
@@ -184,7 +191,14 @@ export default function EducationalRecordsClient({profile}){
    const result=await response.json().catch(()=>({}));
    if(!response.ok||result.success!==true)throw new Error(result.error||"تعذر حفظ كشف التحضير.");
    setNotice(`تم حفظ تحضير ${result.count||prepStudents.length} طالبًا بنجاح.`);await reload();
-  }catch(error){setNotice(error.message||"تعذر حفظ كشف التحضير.")}
+  }catch(error){
+   if(error instanceof TypeError||(typeof navigator!=="undefined"&&!navigator.onLine)){
+    try{
+     for(const row of item.payload.rows) await enqueueEducationalOperation({accountId:profile.id,operationId:row.client_operation_id,operation:"attendance",payload:{...row,class_id:prepClass,attendance_date:prepDate,status:row.present?"present":"absent"}});
+     setNotice("انقطع الاتصال أثناء الحفظ؛ تم الاحتفاظ بكشف التحضير على هذا الجهاز وسيُزامن عند عودة الإنترنت.");
+    }catch(queueError){setNotice(queueError.message||"تعذر حفظ كشف التحضير محليًا.");}
+   }else setNotice(error.message||"تعذر حفظ كشف التحضير.");
+  }
   finally{setSavingSheet(false)}
  }
  function openForm(kind){setForm(f=>({...f,class_id:f.class_id||data.classes[0]?.id||"",student_id:f.student_id||scopedStudents[0]?.id||"",attendance_date:today(),record_date:today(),note_date:today(),exam_date:today()}));setModal(kind)}
