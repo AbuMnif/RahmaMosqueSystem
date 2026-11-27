@@ -19,7 +19,7 @@ const ratingLabels={excellent:"متقن",very_good:"جيد جدًا",good:"جي�
 const empty={classes:[],students:[],attendance:[],memorization:[],exams:[],notes:[],enrollments:[],assignments:[],examResults:[],teachers:[],auditLogs:[]};
 
 export default function EducationalRecordsClient({profile}){
- const [data,setData]=useState(empty),[loading,setLoading]=useState(true),[loadError,setLoadError]=useState(""),[notice,setNotice]=useState(""),[tab,setTab]=useState("overview"),[classFilter,setClassFilter]=useState("all"),[studentFilter,setStudentFilter]=useState("all"),[from,setFrom]=useState(""),[to,setTo]=useState(""),[modal,setModal]=useState(""),[form,setForm]=useState({class_id:"",student_id:"",attendance_date:today(),status:"present",record_date:today(),record_type:"new_memorization",surah_number:"1",from_ayah:"1",to_ayah:"1",verbal_rating:"excellent",note_date:today(),note:"",exam_date:today(),title:"",description:"",exam_id:"",score:"",notes:""}),[prepClass,setPrepClass]=useState(""),[prepDate,setPrepDate]=useState(today()),[attendanceMarks,setAttendanceMarks]=useState({}),[savingSheet,setSavingSheet]=useState(false),[savingRecord,setSavingRecord]=useState(false);
+ const [data,setData]=useState(empty),[offlineQueue,setOfflineQueue]=useState({pending:0,needs_review:0,failed:0}),[loading,setLoading]=useState(true),[loadError,setLoadError]=useState(""),[notice,setNotice]=useState(""),[tab,setTab]=useState("overview"),[classFilter,setClassFilter]=useState("all"),[studentFilter,setStudentFilter]=useState("all"),[from,setFrom]=useState(""),[to,setTo]=useState(""),[modal,setModal]=useState(""),[form,setForm]=useState({class_id:"",student_id:"",attendance_date:today(),status:"present",record_date:today(),record_type:"new_memorization",surah_number:"1",from_ayah:"1",to_ayah:"1",verbal_rating:"excellent",note_date:today(),note:"",exam_date:today(),title:"",description:"",exam_id:"",score:"",notes:""}),[prepClass,setPrepClass]=useState(""),[prepDate,setPrepDate]=useState(today()),[attendanceMarks,setAttendanceMarks]=useState({}),[savingSheet,setSavingSheet]=useState(false),[savingRecord,setSavingRecord]=useState(false);
  const saveLock=useRef(false);
  useEffect(()=>{const selected=new URLSearchParams(window.location.search).get("student");if(selected)setStudentFilter(selected)},[]);
  const canWrite=["admin","supervisor","teacher"].includes(profile.role);
@@ -62,6 +62,23 @@ export default function EducationalRecordsClient({profile}){
   }finally{setLoading(false)}
  },[profile.id,profile.role]);
  useEffect(()=>{reload()},[reload]);
+ useEffect(()=>{
+  let active=true;
+  const refreshQueue=async()=>{
+   try{
+    const [pending,review,failed]=await Promise.all([
+     listEducationalOperations(profile.id,"pending"),
+     listEducationalOperations(profile.id,"needs_review"),
+     listEducationalOperations(profile.id,"failed")
+    ]);
+    if(active)setOfflineQueue({pending:pending.length,needs_review:review.length,failed:failed.length});
+   }catch(error){console.error("Queue status read failed:",error)}
+  };
+  refreshQueue();
+  const timer=setInterval(refreshQueue,5000);
+  window.addEventListener("online",refreshQueue);
+  return()=>{active=false;clearInterval(timer);window.removeEventListener("online",refreshQueue)};
+ },[profile.id]);
  useEffect(()=>{
   let running=false;
   const syncPending=async()=>{
@@ -170,7 +187,7 @@ export default function EducationalRecordsClient({profile}){
  return <main className="records-page" dir="rtl">
   {notice&&<div className="records-toast" role="status">{notice}<button onClick={()=>setNotice("")} aria-label="إغلاق">×</button></div>}
   <header className="records-header"><a href="/dashboard">← لوحة التحكم</a><div><small>منظومة عَون · مسجد التراحم</small><h1>السجل التعليمي</h1><p>إدارة ومتابعة رحلة الطالب التعليمية</p></div><button className="records-export" onClick={exportExcel}>تنزيل Excel</button></header>
-  <section className="records-status"><span className="status-dot"></span>{typeof navigator!=="undefined"&&!navigator.onLine?"وضع دون اتصال · السجلات الجديدة تحفظ محليًا":"متصل · يتم التحقق من الحساب ومزامنة السجلات"}<button type="button" onClick={reload}>تحديث السجلات</button></section>
+  <section className="records-status"><span className="status-dot"></span>{typeof navigator!=="undefined"&&!navigator.onLine?"وضع دون اتصال · السجلات الجديدة تحفظ محليًا":"متصل · يتم التحقق من الحساب ومزامنة السجلات"}<span>بانتظار المزامنة: {offlineQueue.pending}</span>{offlineQueue.needs_review>0&&<strong>تحتاج مراجعة: {offlineQueue.needs_review}</strong>}{offlineQueue.failed>0&&<strong>فشلت: {offlineQueue.failed}</strong>}<button type="button" onClick={reload}>تحديث السجلات</button></section>
   <section className="records-filters"><label>الحلقة<select value={classFilter} onChange={e=>setClassFilter(e.target.value)}><option value="all">كل الحلقات</option>{data.classes.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><label>الطالب<select value={studentFilter} onChange={e=>setStudentFilter(e.target.value)}><option value="all">كل الطلاب</option>{scopedStudents.map(s=><option key={s.id} value={s.id}>{nameOf(s)}</option>)}</select></label><label>من تاريخ<input type="date" value={from} onChange={e=>setFrom(e.target.value)}/></label><label>إلى تاريخ<input type="date" value={to} onChange={e=>setTo(e.target.value)}/></label></section>
   <section className="records-kpis"><article><small>الطلاب</small><strong>{scopedStudents.length}</strong><span>ضمن النطاق المحدد</span></article><article><small>نسبة الحضور</small><strong>{attendanceRate}%</strong><span>{attendance.length} سجل حضور</span></article><article><small>الحفظ والمراجعة</small><strong>{memorization.length}</strong><span>سجل تعليمي</span></article><article><small>متوسط الاختبارات</small><strong>{averageScore}%</strong><span>{resultsFiltered.length} نتيجة مسجلة</span></article><article><small>يحتاجون متابعة</small><strong>{followUpStudents.length}</strong><span>حسب الحضور ومستوى الإتقان</span></article></section>
   <nav className="records-tabs">{[["overview","نظرة عامة"],["attendance","الحضور والغياب"],["memorization","الحفظ والمراجعة"],["exams","الاختبارات والنتائج"],["notes","ملاحظات المعلمين"],["audit","سجل التغييرات"]].map(([k,v])=><button className={tab===k?"active":""} key={k} onClick={()=>setTab(k)}>{v}</button>)}</nav>
