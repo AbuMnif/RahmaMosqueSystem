@@ -116,6 +116,9 @@ export default function EducationalRecordsClient({profile}){
    if(running||!navigator.onLine)return;
    running=true;
    try{
+    // Recover operations left in "syncing" if the browser was closed mid-request.
+    const interrupted=await listEducationalOperations(profile.id,"syncing");
+    for(const item of interrupted) await updateEducationalOperationStatus(item.operationId,"pending","استُعيدت العملية بعد إغلاق التطبيق أثناء المزامنة.");
     const pending=await listEducationalOperations(profile.id,"pending");
     for(const item of pending){
      if(!navigator.onLine)break;
