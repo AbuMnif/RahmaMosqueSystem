@@ -18,8 +18,29 @@ const memorizationLabels={new_memorization:"حفظ جديد",revision:"مراج�
 const ratingLabels={excellent:"متقن",very_good:"جيد جدًا",good:"جيد",acceptable:"مقبول",needs_improvement:"يحتاج إلى تحسين"};
 const empty={classes:[],students:[],attendance:[],memorization:[],exams:[],notes:[],enrollments:[],assignments:[],examResults:[],teachers:[],auditLogs:[]};
 
+async function warmEducationalShell(){
+ if(!("serviceWorker" in navigator))throw new Error("هذا المتصفح لا يدعم تجهيز الصفحة للعمل دون إنترنت.");
+ await navigator.serviceWorker.register("/educational-sw.js",{scope:"/"});
+ const registration=await Promise.race([
+  navigator.serviceWorker.ready,
+  new Promise((_,reject)=>setTimeout(()=>reject(new Error("انتهت مهلة تجهيز التطبيق دون إنترنت.")),12000))
+ ]);
+ const worker=registration.active||navigator.serviceWorker.controller;
+ if(!worker)throw new Error("لم يبدأ مكوّن العمل دون إنترنت بعد.");
+ const channel=new MessageChannel();
+ const result=await Promise.race([
+  new Promise((resolve,reject)=>{
+   channel.port1.onmessage=event=>event.data?.success?resolve(true):reject(new Error(event.data?.error||"تعذر تخزين صفحة السجل التعليمي."));
+   worker.postMessage({type:"CACHE_EDUCATIONAL_SHELL"},[channel.port2]);
+  }),
+  new Promise((_,reject)=>setTimeout(()=>reject(new Error("لم يكتمل تجهيز صفحة السجل التعليمي.")),15000))
+ ]);
+ return result===true;
+}
+
+
 export default function EducationalRecordsClient({profile}){
- const [data,setData]=useState(empty),[offlineQueue,setOfflineQueue]=useState({pending:0,needs_review:0,failed:0}),[loading,setLoading]=useState(true),[loadError,setLoadError]=useState(""),[notice,setNotice]=useState(""),[tab,setTab]=useState("overview"),[classFilter,setClassFilter]=useState("all"),[studentFilter,setStudentFilter]=useState("all"),[from,setFrom]=useState(""),[to,setTo]=useState(""),[modal,setModal]=useState(""),[form,setForm]=useState({class_id:"",student_id:"",attendance_date:today(),status:"present",record_date:today(),record_type:"new_memorization",surah_number:"1",from_ayah:"1",to_ayah:"1",verbal_rating:"excellent",note_date:today(),note:"",exam_date:today(),title:"",description:"",exam_id:"",score:"",notes:""}),[prepClass,setPrepClass]=useState(""),[prepDate,setPrepDate]=useState(today()),[attendanceMarks,setAttendanceMarks]=useState({}),[savingSheet,setSavingSheet]=useState(false),[savingRecord,setSavingRecord]=useState(false);
+ const [data,setData]=useState(empty),[offlineQueue,setOfflineQueue]=useState({pending:0,needs_review:0,failed:0}),[offlinePreparation,setOfflinePreparation]=useState("preparing"),[loading,setLoading]=useState(true),[loadError,setLoadError]=useState(""),[notice,setNotice]=useState(""),[tab,setTab]=useState("overview"),[classFilter,setClassFilter]=useState("all"),[studentFilter,setStudentFilter]=useState("all"),[from,setFrom]=useState(""),[to,setTo]=useState(""),[modal,setModal]=useState(""),[form,setForm]=useState({class_id:"",student_id:"",attendance_date:today(),status:"present",record_date:today(),record_type:"new_memorization",surah_number:"1",from_ayah:"1",to_ayah:"1",verbal_rating:"excellent",note_date:today(),note:"",exam_date:today(),title:"",description:"",exam_id:"",score:"",notes:""}),[prepClass,setPrepClass]=useState(""),[prepDate,setPrepDate]=useState(today()),[attendanceMarks,setAttendanceMarks]=useState({}),[savingSheet,setSavingSheet]=useState(false),[savingRecord,setSavingRecord]=useState(false);
  const saveLock=useRef(false);
  useEffect(()=>{const selected=new URLSearchParams(window.location.search).get("student");if(selected)setStudentFilter(selected)},[]);
  const canWrite=["admin","supervisor","teacher"].includes(profile.role);
@@ -47,16 +68,26 @@ export default function EducationalRecordsClient({profile}){
    setData(fresh);setLoadError("");
    const verifiedAt=new Date().toISOString();
    await saveEducationalSnapshot(profile.id,fresh,{role:profile.role,lastVerifiedAt:verifiedAt});
-   await saveEducationalOfflineMeta(profile.id,{role:profile.role,lastVerifiedAt:verifiedAt});
+   setOfflinePreparation("preparing");
+   try{
+    await warmEducationalShell();
+    await saveEducationalOfflineMeta(profile.id,{role:profile.role,lastVerifiedAt:verifiedAt,shellReadyAt:new Date().toISOString()});
+    setOfflinePreparation("ready");
+   }catch(preparationError){
+    await saveEducationalOfflineMeta(profile.id,{role:profile.role,lastVerifiedAt:verifiedAt,shellReadyAt:null});
+    setOfflinePreparation("failed");
+    setNotice(preparationError.message||"حُفظت البيانات، لكن تجهيز الصفحة دون إنترنت لم يكتمل.");
+   }
   }catch(error){
    try{
     const meta=await readEducationalOfflineMeta(profile.id);
     const verified=meta?.lastVerifiedAt?new Date(meta.lastVerifiedAt).getTime():0;
-    const valid=verified>0&&Date.now()>=verified&&Date.now()-verified<=48*60*60*1000&&meta.role===profile.role;
+    const shellReady=Boolean(meta?.shellReadyAt);
+    const valid=verified>0&&Date.now()>=verified&&Date.now()-verified<=48*60*60*1000&&meta.role===profile.role&&shellReady;
     if(!valid)throw new Error("انتهت صلاحية العمل دون اتصال أو لم يسبق التحقق من هذا الحساب على هذا الجهاز. اتصل بالإنترنت لتسجيل الدخول والتحقق.");
     const cached=await readEducationalSnapshot(profile.id);
     if(!cached?.data)throw new Error("لا توجد نسخة تعليمية محفوظة لهذا الحساب على هذا الجهاز.");
-    setData(cached.data);setLoadError("");
+    setData(cached.data);setLoadError("");setOfflinePreparation("ready");
     setNotice("أنت تعمل دون اتصال. البيانات المعروضة آخر نسخة تم التحقق منها، وستُزامن السجلات الجديدة عند عودة الإنترنت.");
    }catch(localError){setLoadError(localError.message||"تعذر تحميل البيانات المحلية.");}
   }finally{setLoading(false)}
@@ -187,7 +218,7 @@ export default function EducationalRecordsClient({profile}){
  return <main className="records-page" dir="rtl">
   {notice&&<div className="records-toast" role="status">{notice}<button onClick={()=>setNotice("")} aria-label="إغلاق">×</button></div>}
   <header className="records-header"><a href="/dashboard">← لوحة التحكم</a><div><small>منظومة عَون · مسجد التراحم</small><h1>السجل التعليمي</h1><p>إدارة ومتابعة رحلة الطالب التعليمية</p></div><button className="records-export" onClick={exportExcel}>تنزيل Excel</button></header>
-  <section className="records-status"><span className="status-dot"></span>{typeof navigator!=="undefined"&&!navigator.onLine?"وضع دون اتصال · السجلات الجديدة تحفظ محليًا":"متصل · يتم التحقق من الحساب ومزامنة السجلات"}<span>بانتظار المزامنة: {offlineQueue.pending}</span>{offlineQueue.needs_review>0&&<strong>تحتاج مراجعة: {offlineQueue.needs_review}</strong>}{offlineQueue.failed>0&&<strong>فشلت: {offlineQueue.failed}</strong>}<button type="button" onClick={reload}>تحديث السجلات</button></section>
+  <section className="records-status"><span className="status-dot"></span>{typeof navigator!=="undefined"&&!navigator.onLine?"وضع دون اتصال · السجلات الجديدة تحفظ محليًا":"متصل · يتم التحقق من الحساب ومزامنة السجلات"}<strong>{offlinePreparation==="ready"?"✓ التطبيق جاهز للعمل دون إنترنت لمدة 48 ساعة من آخر تحقق ناجح":offlinePreparation==="preparing"?"جارٍ تجهيز التطبيق للعمل دون إنترنت…":"⚠ لم يكتمل تجهيز التطبيق للعمل دون إنترنت"}</strong><span>بانتظار المزامنة: {offlineQueue.pending}</span>{offlineQueue.needs_review>0&&<strong>تحتاج مراجعة: {offlineQueue.needs_review}</strong>}{offlineQueue.failed>0&&<strong>فشلت: {offlineQueue.failed}</strong>}<button type="button" onClick={reload}>تحديث السجلات</button></section>
   <section className="records-filters"><label>الحلقة<select value={classFilter} onChange={e=>setClassFilter(e.target.value)}><option value="all">كل الحلقات</option>{data.classes.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><label>الطالب<select value={studentFilter} onChange={e=>setStudentFilter(e.target.value)}><option value="all">كل الطلاب</option>{scopedStudents.map(s=><option key={s.id} value={s.id}>{nameOf(s)}</option>)}</select></label><label>من تاريخ<input type="date" value={from} onChange={e=>setFrom(e.target.value)}/></label><label>إلى تاريخ<input type="date" value={to} onChange={e=>setTo(e.target.value)}/></label></section>
   <section className="records-kpis"><article><small>الطلاب</small><strong>{scopedStudents.length}</strong><span>ضمن النطاق المحدد</span></article><article><small>نسبة الحضور</small><strong>{attendanceRate}%</strong><span>{attendance.length} سجل حضور</span></article><article><small>الحفظ والمراجعة</small><strong>{memorization.length}</strong><span>سجل تعليمي</span></article><article><small>متوسط الاختبارات</small><strong>{averageScore}%</strong><span>{resultsFiltered.length} نتيجة مسجلة</span></article><article><small>يحتاجون متابعة</small><strong>{followUpStudents.length}</strong><span>حسب الحضور ومستوى الإتقان</span></article></section>
   <nav className="records-tabs">{[["overview","نظرة عامة"],["attendance","الحضور والغياب"],["memorization","الحفظ والمراجعة"],["exams","الاختبارات والنتائج"],["notes","ملاحظات المعلمين"],["audit","سجل التغييرات"]].map(([k,v])=><button className={tab===k?"active":""} key={k} onClick={()=>setTab(k)}>{v}</button>)}</nav>
