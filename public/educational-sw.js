@@ -53,3 +53,26 @@ self.addEventListener("fetch", event => {
     })());
   }
 });
+
+self.addEventListener("message", event => {
+  if (event.data?.type !== "CACHE_EDUCATIONAL_SHELL" || !event.ports?.[0]) return;
+  const port = event.ports[0];
+  event.waitUntil((async () => {
+    try {
+      const response = await fetch(new Request(EDUCATIONAL_PATH, {
+        method: "GET",
+        credentials: "include",
+        headers: { Accept: "text/html" },
+        cache: "no-store"
+      }));
+      if (!response.ok) throw new Error("تعذر تجهيز صفحة السجلات التعليمية.");
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("text/html")) throw new Error("استجابة صفحة السجلات ليست HTML.");
+      const cache = await caches.open(CACHE_NAME);
+      await cache.put(EDUCATIONAL_PATH, response.clone());
+      port.postMessage({ success: true });
+    } catch (error) {
+      port.postMessage({ success: false, error: error?.message || "تعذر تجهيز الصفحة للعمل دون إنترنت." });
+    }
+  })());
+});
