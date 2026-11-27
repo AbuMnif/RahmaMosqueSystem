@@ -35,7 +35,7 @@ self.addEventListener("fetch", event => {
   // The educational page is the only navigational document eligible for
   // offline fallback. The page's client code enforces the 48-hour local
   // verification window before displaying locally stored educational data.
-  if (request.mode === "navigate" && url.pathname === EDUCATIONAL_PATH) {
+  if (request.mode === "navigate" && (url.pathname === EDUCATIONAL_PATH || url.pathname === "/")) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
       try {
@@ -43,7 +43,7 @@ self.addEventListener("fetch", event => {
         if (response.ok) await cache.put(request, response.clone());
         return response;
       } catch {
-        const cached = await cache.match(request, { ignoreSearch: true });
+        const cached = await cache.match(EDUCATIONAL_PATH, { ignoreSearch: true });
         if (cached) return cached;
         return new Response("لا تتوفر صفحة السجلات التعليمية دون اتصال على هذا الجهاز. افتح الصفحة مرة واحدة أثناء الاتصال بالإنترنت.", {
           status: 503,

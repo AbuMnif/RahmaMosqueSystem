@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/educational-offline
+      - fix/ios-educational-offline-launch
   pull_request:
     branches:
       - main
