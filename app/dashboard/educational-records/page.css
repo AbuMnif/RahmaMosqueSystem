@@ -80,3 +80,9 @@
  .records-filters input[type="date"]{width:100%;}
 }
 .records-retry{margin-top:12px;min-height:42px;padding:9px 18px;border:0;border-radius:9px;background:var(--records-green);color:#fff;font:inherit;font-weight:700}
+
+.records-export-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.records-export-group .records-export{display:inline-flex;align-items:center;justify-content:center;min-height:42px}
+.records-export-group .records-export-pdf{background:#fff;color:#174c35;border:1px solid #174c35}
+.records-export-group .records-export-pdf:hover{background:#edf6ea}
+@media(max-width:600px){.records-export-group{width:100%;display:grid;grid-template-columns:1fr 1fr}.records-export-group .records-export{width:100%;white-space:normal;padding:10px 8px}}
