@@ -167,7 +167,11 @@ export async function POST(request) {
       const { data, error } = await ctx.admin.from("classes")
         .select("id, name, is_active").eq("id", classId).maybeSingle();
       if (error) throw error;
-      if (!data || !data.is_active) return NextResponse.json({ error: "الحلقة المحددة غير موجودة أو غير نشطة." }, { status: 400 });
+      if (!data || !data.is_active) {
+        if (createdProfileId) await ctx.admin.from("profiles").delete().eq("id", createdProfileId);
+        if (createdAuthUserId) await ctx.admin.auth.admin.deleteUser(createdAuthUserId);
+        return NextResponse.json({ error: "الحلقة المحددة غير موجودة أو غير نشطة." }, { status: 400 });
+      }
       selectedClass = data;
     }
 
