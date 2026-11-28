@@ -40,7 +40,7 @@ export default function TeacherAttendanceClient({profile}){
  async function save(){
   if(saving)return;const targets=teachers.filter(t=>!existing[t.id]);if(!targets.length){Q("تم تسجيل جميع المعلمين لهذا التاريخ.");return}S(true);E("");Q("");
   try{for(const t of targets){const p={teacher_id:t.id,attendance_date:date,status:marks[t.id]===false?"absent":"present",notes:notes[t.id]||"",client_operation_id:uid()};
-   if(!navigator.onLine){await enqueueEducationalOperation({accountId:profile.id,operationId:p.client_operation_id,operation:"teacher_attendance",payload:p});continue}
+   if(!navigator.onLine){await enqueueEducationalOperation({accountId:profile.id,operationId:p.client_operation_id,operation:"teacher_attendance",payload:p});R(rows=>[...rows,{...p,id:p.client_operation_id,teacher_name:t.full_name}]);continue}
    const res=await fetch("/api/teacher-attendance",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)}),j=await res.json().catch(()=>({}));if(!res.ok||!j.success)throw Error(j.error||"تعذر حفظ سجل أحد المعلمين.");
   }Q(navigator.onLine?"تم حفظ تحضير المعلمين.":"حُفظ التحضير محليًا وسيُزامن عند عودة الاتصال.");if(navigator.onLine)await load();else await refreshQueue()
   }catch(e){E(e.message)}finally{S(false)}
@@ -48,7 +48,7 @@ export default function TeacherAttendanceClient({profile}){
  const present=teachers.filter(t=>existing[t.id]?.status==="present").length,absent=teachers.filter(t=>existing[t.id]?.status==="absent").length;
  return <main className="teacher-attendance-page" dir="rtl">
   <header className="ta-header"><a href="/dashboard">← لوحة التحكم</a><div><small>منظومة عَون · مسجد التراحم</small><h1>تحضير المعلمين</h1><p>قسم مستقل لتسجيل حضور المعلمين وغيابهم وملاحظاتهم.</p></div><button onClick={load} disabled={loading}>تحديث</button></header>
-  <section className="ta-status"><span>{navigator.onLine?"متصل":"دون اتصال"}</span><span>بانتظار المزامنة: {queue.pending}</span>{queue.needs_review>0&&<span>تحتاج مراجعة: {queue.needs_review}</span>}{queue.failed>0&&<span>فشلت: {queue.failed}</span>}<strong>{ready?"مهيأ دون اتصال حتى 48 ساعة من آخر تحقق":"التحقق دون اتصال غير مهيأ"}</strong></section>
+  <section className="ta-status"><span>{typeof navigator!=="undefined"&&navigator.onLine?"متصل":"دون اتصال"}</span><span>بانتظار المزامنة: {queue.pending}</span>{queue.needs_review>0&&<span>تحتاج مراجعة: {queue.needs_review}</span>}{queue.failed>0&&<span>فشلت: {queue.failed}</span>}<strong>{ready?"مهيأ دون اتصال حتى 48 ساعة من آخر تحقق":"التحقق دون اتصال غير مهيأ"}</strong></section>
   {notice&&<p className="ta-notice">{notice}</p>}{error&&<p className="ta-error">{error}<button onClick={load}>إعادة المحاولة</button></p>}
   <section className="ta-panel"><div className="ta-title"><div><h2>كشف التحضير اليومي</h2><p>حدد التاريخ وسجل حالة كل معلم.</p></div><b>{teachers.length} معلم</b></div>
    <label className="ta-date">تاريخ التحضير<input type="date" value={date} onChange={e=>D(e.target.value)}/></label>
