@@ -56,7 +56,7 @@ const moduleLinks = {
   "متابعة الطلاب": "/dashboard/students",
   "الحلقات والمعلمون": "/dashboard/classes",
   "السجلات التعليمية": "/dashboard/educational-records",
-  "تحضير المعلمين": "/dashboard/educational-records?tab=teacher_attendance",
+  "تحضير المعلمين": "/dashboard/teacher-attendance",
   "السجل التعليمي": "/dashboard/educational-records",
   "أبنائي": "/dashboard/guardian",
   "موافقات الأنشطة": "/dashboard/guardian",
