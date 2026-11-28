@@ -251,6 +251,16 @@ export async function PATCH(request) {
     if (updates.birth_date && !/^\d{4}-\d{2}-\d{2}$/.test(updates.birth_date)) {
       return NextResponse.json({ error: "تاريخ الميلاد غير صالح." }, { status: 400 });
     }
+    let validatedClass = null;
+    if (Object.prototype.hasOwnProperty.call(body, "class_id") && clean(body.class_id)) {
+      const { data, error } = await ctx.admin.from("classes")
+        .select("id, is_active").eq("id", clean(body.class_id)).maybeSingle();
+      if (error) throw error;
+      if (!data || !data.is_active) {
+        return NextResponse.json({ error: "الحلقة المحددة غير موجودة أو غير نشطة." }, { status: 400 });
+      }
+      validatedClass = data;
+    }
     if (updates.guardian_id) {
       const { data: guardian, error } = await ctx.admin.from("profiles")
         .select("id, role, is_active").eq("id", updates.guardian_id).maybeSingle();
@@ -273,13 +283,9 @@ export async function PATCH(request) {
           .update({ end_date: new Date().toISOString().slice(0, 10) }).eq("id", activeEnrollment[0].id);
         if (error) throw error;
       }
-      if (classId) {
-        const { data: targetClass, error: classError } = await ctx.admin.from("classes")
-          .select("id, is_active").eq("id", classId).maybeSingle();
-        if (classError) throw classError;
-        if (!targetClass || !targetClass.is_active) return NextResponse.json({ error: "الحلقة المحددة غير موجودة أو غير نشطة." }, { status: 400 });
+      if (classId && validatedClass) {
         const { error } = await ctx.admin.from("student_enrollments").insert({
-          student_id: id, class_id: classId, start_date: new Date().toISOString().slice(0, 10),
+          student_id: id, class_id: validatedClass.id, start_date: new Date().toISOString().slice(0, 10),
         });
         if (error) throw error;
       }
