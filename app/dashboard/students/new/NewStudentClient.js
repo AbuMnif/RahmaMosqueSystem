@@ -394,7 +394,7 @@ export default function NewStudentClient({ profile }) {
                       />
                     </label>
                   </div>
-                ) : (
+                ) : form.guardian_mode === "existing" ? (
                   <label className="new-student-full-field">
                     اختيار ولي الأمر
                     <select
@@ -403,7 +403,6 @@ export default function NewStudentClient({ profile }) {
                       onChange={updateField}
                     >
                       <option value="">اختر ولي الأمر</option>
-
                       {guardians.map((guardian) => (
                         <option key={guardian.id} value={guardian.id}>
                           {guardian.full_name} — {guardian.username}
@@ -411,7 +410,7 @@ export default function NewStudentClient({ profile }) {
                       ))}
                     </select>
                   </label>
-                )}
+                ) : null}
               </section>
 
               {error && (
@@ -443,7 +442,7 @@ export default function NewStudentClient({ profile }) {
               <p>
                 {receipt.is_preview
                   ? "هذه بطاقة تجريبية للمعاينة فقط. لم يتم إنشاء طالب أو حساب ولي أمر، ولم تُحفظ أي بيانات."
-                  : "تم إنشاء بيانات التسجيل وربط الطالب بولي الأمر والحلقة."}
+                  : "تم إنشاء سجل الطالب. يمكنك ربطه بولي أمر أو حلقة الآن أو في وقت لاحق."}
               </p>
             </div>
 
