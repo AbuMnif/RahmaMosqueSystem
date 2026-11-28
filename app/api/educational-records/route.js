@@ -79,7 +79,14 @@ export async function GET() {
       admin.from("class_teachers").select("class_id,teacher_id,teaching_days").in("class_id", safeIds(classIds)),
     ]);
     for (const r of [a,m,e,n,en,as]) if (r.error) throw r.error;
-    const [teacherAttendanceResult, teacherProfilesResult] = await Promise.all([\n      admin.from("teacher_attendance").select("*").order("attendance_date",{ascending:false}).limit(5000),\n      admin.from("profiles").select("id,full_name").eq("role","teacher").eq("is_active",true).order("full_name")\n    ]);\n    if(teacherAttendanceResult.error) throw teacherAttendanceResult.error;\n    if(teacherProfilesResult.error) throw teacherProfilesResult.error;\n    const teacherAttendance=(teacherAttendanceResult.data||[]).map(row=>({...row,teacher_name:teacherProfilesResult.data.find(t=>t.id===row.teacher_id)?.full_name||"—"}));\n    const examIds = (e.data || []).map(x => x.id);
+    const [teacherAttendanceResult, teacherProfilesResult] = await Promise.all([
+      admin.from("teacher_attendance").select("*").order("attendance_date",{ascending:false}).limit(5000),
+      admin.from("profiles").select("id,full_name").eq("role","teacher").eq("is_active",true).order("full_name")
+    ]);
+    if(teacherAttendanceResult.error) throw teacherAttendanceResult.error;
+    if(teacherProfilesResult.error) throw teacherProfilesResult.error;
+    const teacherAttendance=(teacherAttendanceResult.data||[]).map(row=>({...row,teacher_name:teacherProfilesResult.data.find(t=>t.id===row.teacher_id)?.full_name||"—"}));
+    const examIds = (e.data || []).map(x => x.id);
     const rr = await admin.from("exam_results").select("*").in("exam_id", safeIds(examIds)).limit(5000);
     if (rr.error) throw rr.error;
     const teacherIds = [...new Set((as.data || []).map(x => x.teacher_id))];
@@ -107,7 +114,25 @@ export async function POST(request) {
     if (!["admin","supervisor","teacher"].includes(profile.role)) return NextResponse.json({ error:"ليس لديك صلاحية إضافة السجلات." }, { status:403 });
     const { operation, payload={} } = await request.json();
 
-    if (operation === "teacher_attendance") {\n      if(!["admin","supervisor"].includes(profile.role)) return NextResponse.json({error:"تسجيل حضور المعلمين متاح للإدارة والمشرف فقط."},{status:403});\n      const teacherId=String(payload.teacher_id||"");\n      const date=String(payload.attendance_date||"");\n      const status=attendanceValues[payload.status];\n      if(!teacherId||!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||!["present","absent"].includes(status)) return NextResponse.json({error:"تحقق من بيانات حضور المعلم."},{status:400});\n      const teacher=await admin.from("profiles").select("id").eq("id",teacherId).eq("role","teacher").eq("is_active",true).maybeSingle();\n      if(teacher.error||!teacher.data)return NextResponse.json({error:"حساب المعلم غير موجود أو غير نشط."},{status:404});\n      const clientId=payload.client_operation_id||randomUUID();\n      const duplicate=await admin.from("teacher_attendance").select("id").eq("client_operation_id",clientId).maybeSingle();\n      if(duplicate.data)return NextResponse.json({success:true,duplicate:true,id:duplicate.data.id});\n      const existing=await admin.from("teacher_attendance").select("id").eq("teacher_id",teacherId).eq("attendance_date",date).maybeSingle();\n      if(existing.error)throw existing.error;\n      if(existing.data)return NextResponse.json({error:"يوجد تحضير محفوظ لهذا المعلم في التاريخ المحدد. لم يتم استبداله."},{status:409});\n      const saved=await admin.from("teacher_attendance").insert({client_operation_id:clientId,teacher_id:teacherId,attendance_date:date,status,notes:String(payload.notes||"").trim()||null,created_by:profile.id}).select("id").single();\n      if(saved.error){if(saved.error.code==="23505")return NextResponse.json({error:"يوجد تحضير سابق لهذا المعلم في التاريخ المحدد."},{status:409});throw saved.error;}\n      return NextResponse.json({success:true,id:saved.data.id});\n    }\n    if (operation === "attendance_batch") {
+    if (operation === "teacher_attendance") {
+      if(!["admin","supervisor"].includes(profile.role)) return NextResponse.json({error:"تسجيل حضور المعلمين متاح للإدارة والمشرف فقط."},{status:403});
+      const teacherId=String(payload.teacher_id||"");
+      const date=String(payload.attendance_date||"");
+      const status=attendanceValues[payload.status];
+      if(!teacherId||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!["present","absent"].includes(status)) return NextResponse.json({error:"تحقق من بيانات حضور المعلم."},{status:400});
+      const teacher=await admin.from("profiles").select("id").eq("id",teacherId).eq("role","teacher").eq("is_active",true).maybeSingle();
+      if(teacher.error||!teacher.data)return NextResponse.json({error:"حساب المعلم غير موجود أو غير نشط."},{status:404});
+      const clientId=payload.client_operation_id||randomUUID();
+      const duplicate=await admin.from("teacher_attendance").select("id").eq("client_operation_id",clientId).maybeSingle();
+      if(duplicate.data)return NextResponse.json({success:true,duplicate:true,id:duplicate.data.id});
+      const existing=await admin.from("teacher_attendance").select("id").eq("teacher_id",teacherId).eq("attendance_date",date).maybeSingle();
+      if(existing.error)throw existing.error;
+      if(existing.data)return NextResponse.json({error:"يوجد تحضير محفوظ لهذا المعلم في التاريخ المحدد. لم يتم استبداله."},{status:409});
+      const saved=await admin.from("teacher_attendance").insert({client_operation_id:clientId,teacher_id:teacherId,attendance_date:date,status,notes:String(payload.notes||"").trim()||null,created_by:profile.id}).select("id").single();
+      if(saved.error){if(saved.error.code==="23505")return NextResponse.json({error:"يوجد تحضير سابق لهذا المعلم في التاريخ المحدد."},{status:409});throw saved.error;}
+      return NextResponse.json({success:true,id:saved.data.id});
+    }
+    if (operation === "attendance_batch") {
       const classId = String(payload.class_id || "");
       const attendanceDate = String(payload.attendance_date || "");
       const rows = Array.isArray(payload.rows) ? payload.rows : [];
