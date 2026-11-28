@@ -96,7 +96,7 @@ export async function GET() {
       changers=changerIds.length?await admin.from("profiles").select("id,full_name").in("id",changerIds):{data:[],error:null};
       if(changers.error)throw changers.error;
     }
-    return NextResponse.json({ success:true, data:{ profile, readOnly:["platform_supervisor","guardian"].includes(profile.role), classes:cr.data||[], students:sr.data||[], attendance:a.data||[], memorization:m.data||[], exams:e.data||[], notes:n.data||[], enrollments:en.data||[], assignments:as.data||[], examResults:rr.data||[], teachers:teacherProfilesResult.data||[], teacherAttendance, auditLogs:(audit.data||[]).map(x=>({...x,changed_by_name:changers.data?.find(p=>p.id===x.changed_by)?.full_name||"النظام"})), fetchedAt:new Date().toISOString() } });
+    return NextResponse.json({ success:true, data:{ profile, readOnly:["platform_supervisor","guardian"].includes(profile.role), classes:cr.data||[], students:sr.data||[], attendance:a.data||[], memorization:m.data||[], exams:e.data||[], notes:n.data||[], enrollments:en.data||[], assignments:as.data||[], examResults:rr.data||[], auditLogs:(audit.data||[]).map(x=>({...x,changed_by_name:changers.data?.find(p=>p.id===x.changed_by)?.full_name||"النظام"})), fetchedAt:new Date().toISOString() } });
   } catch (e) { console.error("Educational records GET", e); return NextResponse.json({ error:"تعذر تحميل بيانات السجل التعليمي." }, { status:500 }); }
 }
 export async function POST(request) {
