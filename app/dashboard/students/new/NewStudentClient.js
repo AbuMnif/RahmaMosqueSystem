@@ -7,9 +7,10 @@ const initialForm = {
   middle_name: "",
   last_name: "",
   birth_date: "",
+  gender: "",
   notes: "",
   class_id: "",
-  guardian_mode: "new",
+  guardian_mode: "none",
   guardian_id: "",
   guardian_name: "",
   username: "",
@@ -65,50 +66,19 @@ export default function NewStudentClient({ profile }) {
     event.preventDefault();
     setError("");
 
-    if (!form.first_name.trim() || !form.last_name.trim()) {
-      setError("يرجى إدخال اسم الطالب.");
+    const hasGuardianData = form.guardian_name.trim() || form.username.trim() || form.password;
+    if (form.guardian_mode === "new" && hasGuardianData &&
+      (!form.guardian_name.trim() || !form.username.trim() || form.password.length < 8)) {
+      setError("لإنشاء حساب ولي الأمر أكمل الاسم واسم المستخدم وكلمة مرور من 8 أحرف، أو اتركها فارغة.");
       return;
     }
 
-    if (!form.class_id) {
-      setError("يرجى اختيار الحلقة.");
+    if (form.guardian_mode === "existing" && !form.guardian_id) {
+      setError("اختر ولي الأمر أو حدد خيار عدم الربط.");
       return;
     }
 
-    if (
-      form.guardian_mode === "new" &&
-      (!form.guardian_name.trim() ||
-        !form.username.trim() ||
-        !form.password)
-    ) {
-      setError("يرجى إكمال بيانات حساب ولي الأمر.");
-      return;
-    }
-
-    if (
-      form.guardian_mode === "new" &&
-      form.password.length < 8
-    ) {
-      setError("كلمة المرور يجب ألا تقل عن 8 أحرف.");
-      return;
-    }
-
-    if (
-      form.guardian_mode === "existing" &&
-      !form.guardian_id
-    ) {
-      setError("يرجى اختيار ولي الأمر.");
-      return;
-    }
-
-    const selectedClass = classes.find(
-      (item) => item.id === form.class_id
-    );
-
-    if (!selectedClass) {
-      setError("الحلقة المحددة غير موجودة ضمن البيانات المتاحة.");
-      return;
-    }
+    const selectedClass = classes.find((item) => item.id === form.class_id) || null;
 
     if (isPlatformSupervisor) {
       const selectedGuardian =
@@ -133,28 +103,19 @@ export default function NewStudentClient({ profile }) {
           middle_name: form.middle_name.trim() || null,
           last_name: form.last_name.trim(),
           birth_date: form.birth_date || null,
+          gender: form.gender || null,
         },
-        guardian: {
-          full_name:
-            form.guardian_mode === "new"
-              ? form.guardian_name.trim()
-              : selectedGuardian.full_name,
-          username:
-            form.guardian_mode === "new"
-              ? form.username.trim()
-              : selectedGuardian.username,
-          is_new: form.guardian_mode === "new",
-        },
-        class: {
-          id: selectedClass.id,
-          name: selectedClass.name,
-        },
+        guardian: form.guardian_mode === "none" || (form.guardian_mode === "new" && !hasGuardianData)
+          ? null
+          : {
+              full_name: form.guardian_mode === "new" ? form.guardian_name.trim() : selectedGuardian?.full_name,
+              username: form.guardian_mode === "new" ? form.username.trim() : selectedGuardian?.username,
+              is_new: form.guardian_mode === "new",
+            },
+        class: selectedClass ? { id: selectedClass.id, name: selectedClass.name } : null,
         teacher_names: [],
         registration_date: new Date().toISOString().slice(0, 10),
-        initial_password:
-          form.guardian_mode === "new"
-            ? form.password
-            : null,
+        initial_password: form.guardian_mode === "new" && hasGuardianData ? form.password : null,
       };
 
       setReceipt(previewReceipt);
@@ -268,7 +229,7 @@ export default function NewStudentClient({ profile }) {
               <span>منظومة عَون الإدارية</span>
               <h1>تسجيل طالب جديد</h1>
               <p>
-                أدخل بيانات الطالب وولي الأمر والحلقة لإتمام التسجيل.
+                يمكنك تسجيل الطالب بالبيانات المتوفرة الآن، واستكمال أو تعديل أي معلومة لاحقًا.
               </p>
 
               {isPlatformSupervisor && (
@@ -293,7 +254,6 @@ export default function NewStudentClient({ profile }) {
                       name="first_name"
                       value={form.first_name}
                       onChange={updateField}
-                      required
                     />
                   </label>
 
@@ -312,7 +272,6 @@ export default function NewStudentClient({ profile }) {
                       name="last_name"
                       value={form.last_name}
                       onChange={updateField}
-                      required
                     />
                   </label>
 
@@ -328,7 +287,11 @@ export default function NewStudentClient({ profile }) {
 
                   <label>
                     الجنس
-                    <input value="ذكر" disabled />
+                    <select name="gender" value={form.gender} onChange={updateField}>
+                      <option value="">غير محدد</option>
+                      <option value="male">ذكر</option>
+                      <option value="female">أنثى</option>
+                    </select>
                   </label>
 
                   <label>
@@ -337,9 +300,8 @@ export default function NewStudentClient({ profile }) {
                       name="class_id"
                       value={form.class_id}
                       onChange={updateField}
-                      required
                     >
-                      <option value="">اختر الحلقة</option>
+                      <option value="">بدون حلقة حاليًا</option>
 
                       {classes.map((item) => (
                         <option key={item.id} value={item.id}>
@@ -365,6 +327,17 @@ export default function NewStudentClient({ profile }) {
                 <h2>حساب ولي الأمر</h2>
 
                 <div className="guardian-mode-options">
+                  <label>
+                    <input
+                      type="radio"
+                      name="guardian_mode"
+                      value="none"
+                      checked={form.guardian_mode === "none"}
+                      onChange={updateField}
+                    />
+                    بدون ربط ولي أمر حاليًا
+                  </label>
+
                   <label>
                     <input
                       type="radio"
@@ -396,7 +369,6 @@ export default function NewStudentClient({ profile }) {
                         name="guardian_name"
                         value={form.guardian_name}
                         onChange={updateField}
-                        required
                       />
                     </label>
 
@@ -407,7 +379,6 @@ export default function NewStudentClient({ profile }) {
                         value={form.username}
                         onChange={updateField}
                         autoComplete="off"
-                        required
                       />
                     </label>
 
@@ -420,21 +391,18 @@ export default function NewStudentClient({ profile }) {
                         onChange={updateField}
                         autoComplete="new-password"
                         minLength="8"
-                        required
                       />
                     </label>
                   </div>
-                ) : (
+                ) : form.guardian_mode === "existing" ? (
                   <label className="new-student-full-field">
                     اختيار ولي الأمر
                     <select
                       name="guardian_id"
                       value={form.guardian_id}
                       onChange={updateField}
-                      required
                     >
                       <option value="">اختر ولي الأمر</option>
-
                       {guardians.map((guardian) => (
                         <option key={guardian.id} value={guardian.id}>
                           {guardian.full_name} — {guardian.username}
@@ -442,7 +410,7 @@ export default function NewStudentClient({ profile }) {
                       ))}
                     </select>
                   </label>
-                )}
+                ) : null}
               </section>
 
               {error && (
@@ -474,7 +442,7 @@ export default function NewStudentClient({ profile }) {
               <p>
                 {receipt.is_preview
                   ? "هذه بطاقة تجريبية للمعاينة فقط. لم يتم إنشاء طالب أو حساب ولي أمر، ولم تُحفظ أي بيانات."
-                  : "تم إنشاء بيانات التسجيل وربط الطالب بولي الأمر والحلقة."}
+                  : "تم إنشاء سجل الطالب. يمكنك ربطه بولي أمر أو حلقة الآن أو في وقت لاحق."}
               </p>
             </div>
 
@@ -517,12 +485,12 @@ export default function NewStudentClient({ profile }) {
 
                   <div>
                     <span>الجنس</span>
-                    <strong>ذكر</strong>
+                    <strong>{receipt.student.gender === "female" ? "أنثى" : receipt.student.gender === "male" ? "ذكر" : "غير محدد"}</strong>
                   </div>
 
                   <div>
                     <span>الحلقة المسجل فيها</span>
-                    <strong>{receipt.class.name}</strong>
+                    <strong>{receipt.class?.name || "غير مسجل في حلقة"}</strong>
                   </div>
 
                   <div>
@@ -538,50 +506,27 @@ export default function NewStudentClient({ profile }) {
 
               <section className="registration-card-section">
                 <h2>بيانات ولي الأمر والحساب</h2>
-
-                <div className="registration-data-grid">
-                  <div>
-                    <span>اسم ولي الأمر</span>
-                    <strong>{receipt.guardian.full_name}</strong>
-                  </div>
-
-                  <div>
-                    <span>اسم المستخدم</span>
-                    <strong dir="ltr">
-                      {receipt.guardian.username}
-                    </strong>
-                  </div>
-
-                  <div className="registration-password">
-                    <span>
-                      {receipt.is_preview
-                        ? "كلمة المرور التجريبية"
-                        : "كلمة المرور الأولية"}
-                    </span>
-
-                    <strong dir="ltr">
-                      {receipt.initial_password ||
-                        "الحساب موجود مسبقًا — استخدم كلمة المرور الحالية"}
-                    </strong>
-                  </div>
-                </div>
-
-                <p className="registration-account-note">
-                  {receipt.is_preview
-                    ? "بيانات الحساب المعروضة تجريبية للمعاينة فقط، ولم يتم إنشاء الحساب."
-                    : receipt.guardian.is_new
-                      ? "يرجى تسليم بيانات الدخول لولي الأمر والاحتفاظ بها في مكان آمن."
-                      : "تم ربط الطالب بحساب ولي الأمر الموجود، ولم يتم تغيير كلمة المرور."}
-                </p>
+                {receipt.guardian ? (
+                  <>
+                    <div className="registration-data-grid">
+                      <div><span>اسم ولي الأمر</span><strong>{receipt.guardian.full_name}</strong></div>
+                      <div><span>اسم المستخدم</span><strong dir="ltr">{receipt.guardian.username}</strong></div>
+                      <div className="registration-password">
+                        <span>{receipt.is_preview ? "كلمة المرور التجريبية" : "كلمة المرور الأولية"}</span>
+                        <strong dir="ltr">{receipt.initial_password || "الحساب موجود مسبقًا — استخدم كلمة المرور الحالية"}</strong>
+                      </div>
+                    </div>
+                    <p className="registration-account-note">
+                      {receipt.is_preview ? "بيانات الحساب المعروضة تجريبية للمعاينة فقط." : receipt.guardian.is_new ? "يرجى تسليم بيانات الدخول لولي الأمر والاحتفاظ بها في مكان آمن." : "تم ربط الطالب بحساب ولي الأمر الموجود."}
+                    </p>
+                  </>
+                ) : <p className="registration-account-note">لم يتم ربط حساب ولي أمر بهذا الطالب حتى الآن، ويمكن إضافته لاحقًا من تعديل بيانات الطالب.</p>}
               </section>
 
               <section className="registration-platform-description">
                 <h2>عن منظومة عَون الإدارية</h2>
                 <p>
-                  تتيح المنظومة لولي الأمر متابعة أبنائه والاطلاع على
-                  الحضور والغياب، والحفظ الجديد والمراجعة، ونتائج
-                  الاختبارات، وتقييمات المعلمين وملاحظاتهم، بما يساعد
-                  على متابعة المسيرة القرآنية والتعليمية للطالب.
+                  تتيح المنظومة متابعة الحضور والغياب والحفظ والمراجعة ونتائج الاختبارات وملاحظات المعلمين، ويمكن استكمال بيانات الطالب وربط ولي أمره لاحقًا.
                 </p>
               </section>
 
