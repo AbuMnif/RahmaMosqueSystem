@@ -41,7 +41,11 @@ self.addEventListener("fetch", event => {
       const cache = await caches.open(CACHE_NAME);
       try {
         const response = await fetch(request);
-        if (response.ok) await cache.put(request, response.clone());
+        if (response.ok && (url.pathname === DASHBOARD_PATH || url.pathname === EDUCATIONAL_PATH)) {
+          // Store a canonical URL without query parameters so links such as
+          // ?tab=teacher_attendance can reuse the same authenticated page shell.
+          await cache.put(url.pathname, response.clone());
+        }
         return response;
       } catch {
         const cached = await cache.match(url.pathname === DASHBOARD_PATH ? DASHBOARD_PATH : EDUCATIONAL_PATH, { ignoreSearch: true });
@@ -60,18 +64,21 @@ self.addEventListener("message", event => {
   const port = event.ports[0];
   event.waitUntil((async () => {
     try {
-      const response = await fetch(new Request(DASHBOARD_PATH, {
+      const cache = await caches.open(CACHE_NAME);
+      // Cache the actual educational records route, not just the dashboard.
+      // This route is the destination used by both educational records and
+      // the dedicated teacher-attendance card.
+      const response = await fetch(new Request(EDUCATIONAL_PATH, {
         method: "GET",
         credentials: "include",
         headers: { Accept: "text/html" },
         cache: "no-store"
       }));
-      if (!response.ok) throw new Error("تعذر تجهيز صفحة السجلات التعليمية.");
-      if (new URL(response.url).pathname !== DASHBOARD_PATH) throw new Error("انتهت جلسة الدخول أو تعذر التحقق من الحساب.");
+      if (!response.ok) throw new Error("تعذر تجهيز صفحة السجل التعليمي.");
+      if (new URL(response.url).pathname !== EDUCATIONAL_PATH) throw new Error("انتهت جلسة الدخول أو تعذر التحقق من الحساب.");
       const contentType = response.headers.get("content-type") || "";
-      if (!contentType.includes("text/html")) throw new Error("استجابة صفحة السجلات ليست HTML.");
-      const cache = await caches.open(CACHE_NAME);
-      await cache.put(DASHBOARD_PATH, response.clone());
+      if (!contentType.includes("text/html")) throw new Error("استجابة صفحة السجل التعليمي ليست HTML.");
+      await cache.put(EDUCATIONAL_PATH, response.clone());
       const html = await response.clone().text();
       const assetPaths = [...html.matchAll(/(?:src|href)=["']([^"']*_next\/static\/[^"']+)["']/g)].map(match => match[1]);
       const uniqueAssets = [...new Set(assetPaths)].map(value => new URL(value.replaceAll("&amp;", "&"), self.location.origin).href);
