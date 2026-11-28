@@ -18,6 +18,7 @@ export default function StudentsClient({ profile }) {
   const isPlatformSupervisor = profile?.role === "platform_supervisor";
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
+  const [guardians, setGuardians] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -36,6 +37,7 @@ export default function StudentsClient({ profile }) {
       ]);
       setStudents(Array.isArray(studentData.students) ? studentData.students : []);
       setClasses(Array.isArray(options.classes) ? options.classes : []);
+      setGuardians(Array.isArray(options.guardians) ? options.guardians : []);
     } catch (err) {
       setError(err.message || "تعذر تحميل بيانات الطلاب.");
     } finally {
@@ -44,14 +46,6 @@ export default function StudentsClient({ profile }) {
   }, []);
 
   useEffect(() => { loadStudents(); }, [loadStudents]);
-
-  const guardians = useMemo(() => {
-    const map = new Map();
-    students.forEach(s => {
-      if (s.guardian?.id) map.set(s.guardian.id, s.guardian);
-    });
-    return [...map.values()];
-  }, [students]);
 
   const filteredStudents = useMemo(() => {
     const query = search.trim().toLowerCase();
