@@ -1,5 +1,6 @@
 const CACHE_NAME = "awn-educational-shell-v1";
 const EDUCATIONAL_PATH = "/dashboard/educational-records";
+const DASHBOARD_PATH = "/dashboard";
 
 self.addEventListener("install", event => {
   event.waitUntil(self.skipWaiting());
@@ -35,7 +36,7 @@ self.addEventListener("fetch", event => {
   // The educational page is the only navigational document eligible for
   // offline fallback. The page's client code enforces the 48-hour local
   // verification window before displaying locally stored educational data.
-  if (request.mode === "navigate" && (url.pathname === EDUCATIONAL_PATH || url.pathname === "/")) {
+  if (request.mode === "navigate" && (url.pathname === DASHBOARD_PATH || url.pathname === EDUCATIONAL_PATH || url.pathname === "/")) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
       try {
@@ -43,7 +44,7 @@ self.addEventListener("fetch", event => {
         if (response.ok) await cache.put(request, response.clone());
         return response;
       } catch {
-        const cached = await cache.match(EDUCATIONAL_PATH, { ignoreSearch: true });
+        const cached = await cache.match(url.pathname === DASHBOARD_PATH ? DASHBOARD_PATH : EDUCATIONAL_PATH, { ignoreSearch: true });
         if (cached) return cached;
         return new Response("لا تتوفر صفحة السجلات التعليمية دون اتصال على هذا الجهاز. افتح الصفحة مرة واحدة أثناء الاتصال بالإنترنت.", {
           status: 503,
@@ -59,18 +60,18 @@ self.addEventListener("message", event => {
   const port = event.ports[0];
   event.waitUntil((async () => {
     try {
-      const response = await fetch(new Request(EDUCATIONAL_PATH, {
+      const response = await fetch(new Request(DASHBOARD_PATH, {
         method: "GET",
         credentials: "include",
         headers: { Accept: "text/html" },
         cache: "no-store"
       }));
       if (!response.ok) throw new Error("تعذر تجهيز صفحة السجلات التعليمية.");
-      if (new URL(response.url).pathname !== EDUCATIONAL_PATH) throw new Error("انتهت جلسة الدخول أو تعذر التحقق من الحساب.");
+      if (new URL(response.url).pathname !== DASHBOARD_PATH) throw new Error("انتهت جلسة الدخول أو تعذر التحقق من الحساب.");
       const contentType = response.headers.get("content-type") || "";
       if (!contentType.includes("text/html")) throw new Error("استجابة صفحة السجلات ليست HTML.");
       const cache = await caches.open(CACHE_NAME);
-      await cache.put(EDUCATIONAL_PATH, response.clone());
+      await cache.put(DASHBOARD_PATH, response.clone());
       const html = await response.clone().text();
       const assetPaths = [...html.matchAll(/(?:src|href)=["']([^"']*_next\/static\/[^"']+)["']/g)].map(match => match[1]);
       const uniqueAssets = [...new Set(assetPaths)].map(value => new URL(value.replaceAll("&amp;", "&"), self.location.origin).href);
