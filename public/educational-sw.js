@@ -1,6 +1,7 @@
 const CACHE_NAME = "awn-educational-shell-v1";
 const EDUCATIONAL_PATH = "/dashboard/educational-records";
 const DASHBOARD_PATH = "/dashboard";
+const TEACHER_ATTENDANCE_PATH = "/dashboard/teacher-attendance";
 
 self.addEventListener("install", event => {
   event.waitUntil(self.skipWaiting());
@@ -36,21 +37,21 @@ self.addEventListener("fetch", event => {
   // The educational page is the only navigational document eligible for
   // offline fallback. The page's client code enforces the 48-hour local
   // verification window before displaying locally stored educational data.
-  if (request.mode === "navigate" && (url.pathname === DASHBOARD_PATH || url.pathname === EDUCATIONAL_PATH || url.pathname === "/")) {
+  if (request.mode === "navigate" && (url.pathname === DASHBOARD_PATH || url.pathname === EDUCATIONAL_PATH || url.pathname === TEACHER_ATTENDANCE_PATH || url.pathname === "/")) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
       try {
         const response = await fetch(request);
-        if (response.ok && (url.pathname === DASHBOARD_PATH || url.pathname === EDUCATIONAL_PATH)) {
+        if (response.ok && [DASHBOARD_PATH, EDUCATIONAL_PATH, TEACHER_ATTENDANCE_PATH].includes(url.pathname)) {
           // Store a canonical URL without query parameters so links such as
           // ?tab=teacher_attendance can reuse the same authenticated page shell.
           await cache.put(url.pathname, response.clone());
         }
         return response;
       } catch {
-        const cached = await cache.match(url.pathname === DASHBOARD_PATH ? DASHBOARD_PATH : EDUCATIONAL_PATH, { ignoreSearch: true });
+        const cached = await cache.match(url.pathname, { ignoreSearch: true });
         if (cached) return cached;
-        return new Response("لا تتوفر صفحة السجلات التعليمية دون اتصال على هذا الجهاز. افتح الصفحة مرة واحدة أثناء الاتصال بالإنترنت.", {
+        return new Response("لا تتوفر الصفحة المطلوبة دون اتصال على هذا الجهاز. افتحها مرة واحدة أثناء الاتصال بالإنترنت.", {
           status: 503,
           headers: { "Content-Type": "text/plain; charset=utf-8" }
         });
@@ -65,27 +66,16 @@ self.addEventListener("message", event => {
   event.waitUntil((async () => {
     try {
       const cache = await caches.open(CACHE_NAME);
-      // Cache the actual educational records route, not just the dashboard.
-      // This route is the destination used by both educational records and
-      // the dedicated teacher-attendance card.
-      const response = await fetch(new Request(EDUCATIONAL_PATH, {
-        method: "GET",
-        credentials: "include",
-        headers: { Accept: "text/html" },
-        cache: "no-store"
+      const paths=[EDUCATIONAL_PATH,TEACHER_ATTENDANCE_PATH];
+      const pages=await Promise.all(paths.map(async path=>{
+        const response=await fetch(new Request(path,{method:"GET",credentials:"include",headers:{Accept:"text/html"},cache:"no-store"}));
+        if(!response.ok||new URL(response.url).pathname!==path||!(response.headers.get("content-type")||"").includes("text/html"))throw new Error("تعذر تجهيز إحدى صفحات التعليم.");
+        await cache.put(path,response.clone());return response;
       }));
-      if (!response.ok) throw new Error("تعذر تجهيز صفحة السجل التعليمي.");
-      if (new URL(response.url).pathname !== EDUCATIONAL_PATH) throw new Error("انتهت جلسة الدخول أو تعذر التحقق من الحساب.");
-      const contentType = response.headers.get("content-type") || "";
-      if (!contentType.includes("text/html")) throw new Error("استجابة صفحة السجل التعليمي ليست HTML.");
-      await cache.put(EDUCATIONAL_PATH, response.clone());
-      const html = await response.clone().text();
-      const assetPaths = [...html.matchAll(/(?:src|href)=["']([^"']*_next\/static\/[^"']+)["']/g)].map(match => match[1]);
-      const uniqueAssets = [...new Set(assetPaths)].map(value => new URL(value.replaceAll("&amp;", "&"), self.location.origin).href);
-      await Promise.allSettled(uniqueAssets.map(async assetUrl => {
-        const assetResponse = await fetch(assetUrl, { credentials: "same-origin" });
-        if (assetResponse.ok) await cache.put(assetUrl, assetResponse);
-      }));
+      const html=(await Promise.all(pages.map(page=>page.clone().text()))).join("\n");
+      const assetPaths=[...html.matchAll(/(?:src|href)=["']([^"']*_next\/static\/[^"']+)["']/g)].map(match=>match[1]);
+      const uniqueAssets=[...new Set(assetPaths)].map(value=>new URL(value.replaceAll("&amp;","&"),self.location.origin).href);
+      await Promise.allSettled(uniqueAssets.map(async assetUrl=>{const assetResponse=await fetch(assetUrl,{credentials:"same-origin"});if(assetResponse.ok)await cache.put(assetUrl,assetResponse);}));
       port.postMessage({ success: true });
     } catch (error) {
       port.postMessage({ success: false, error: error?.message || "تعذر تجهيز الصفحة للعمل دون إنترنت." });
