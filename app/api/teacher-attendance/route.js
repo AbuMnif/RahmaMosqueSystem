@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { createSupabaseServer } from "../../../../lib/supabaseServer";
-import { createSupabaseAdmin } from "../../../../lib/supabaseAdmin";
+import { createSupabaseServer } from "../../../lib/supabaseServer";
+import { createSupabaseAdmin } from "../../../lib/supabaseAdmin";
 export const dynamic="force-dynamic";
 async function context(){
  const sb=await createSupabaseServer();const {data:{user},error}=await sb.auth.getUser();
@@ -24,7 +24,7 @@ export async function POST(request){
  try{
   const c=await context();if(c.error)return NextResponse.json({error:c.error},{status:c.status});
   const p=await request.json(),teacherId=String(p.teacher_id||""),date=String(p.attendance_date||"");
-  if(!teacherId||!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||!["present","absent"].includes(p.status))return NextResponse.json({error:"تحقق من بيانات حضور المعلم."},{status:400});
+  if(!teacherId||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!["present","absent"].includes(p.status))return NextResponse.json({error:"تحقق من بيانات حضور المعلم."},{status:400});
   const t=await c.admin.from("profiles").select("id").eq("id",teacherId).eq("role","teacher").eq("is_active",true).maybeSingle();
   if(t.error||!t.data)return NextResponse.json({error:"حساب المعلم غير موجود أو غير نشط."},{status:404});
   const op=p.client_operation_id||randomUUID();const dup=await c.admin.from("teacher_attendance").select("id").eq("client_operation_id",op).maybeSingle();
