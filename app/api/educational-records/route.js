@@ -79,13 +79,6 @@ export async function GET() {
       admin.from("class_teachers").select("class_id,teacher_id,teaching_days").in("class_id", safeIds(classIds)),
     ]);
     for (const r of [a,m,e,n,en,as]) if (r.error) throw r.error;
-    const [teacherAttendanceResult, teacherProfilesResult] = await Promise.all([
-      admin.from("teacher_attendance").select("*").order("attendance_date",{ascending:false}).limit(5000),
-      admin.from("profiles").select("id,full_name").eq("role","teacher").eq("is_active",true).order("full_name")
-    ]);
-    if(teacherAttendanceResult.error) throw teacherAttendanceResult.error;
-    if(teacherProfilesResult.error) throw teacherProfilesResult.error;
-    const teacherAttendance=(teacherAttendanceResult.data||[]).map(row=>({...row,teacher_name:teacherProfilesResult.data.find(t=>t.id===row.teacher_id)?.full_name||"—"}));
     const examIds = (e.data || []).map(x => x.id);
     const rr = await admin.from("exam_results").select("*").in("exam_id", safeIds(examIds)).limit(5000);
     if (rr.error) throw rr.error;
